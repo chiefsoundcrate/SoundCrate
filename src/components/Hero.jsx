@@ -1,5 +1,5 @@
 // src/components/Hero.jsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import Marquee from 'react-fast-marquee';
 import WaitlistForm from './WaitlistForm';
 import { useAuth } from "../hooks/useAuth";
@@ -18,8 +18,6 @@ const Hero = () => {
   const [waitlistMsg, setWaitlistMsg] = useState("");
   const [waitlistLoading, setWaitlistLoading] = useState(false);
   const [isOnWaitlist, setIsOnWaitlist] = useState(false);
-  const [videosLoaded, setVideosLoaded] = useState(false);
-  const [videoRefs] = useState({});
   
   // Check if user has joined waitlist before (using localStorage)
   useEffect(() => {
@@ -44,80 +42,26 @@ const Hero = () => {
     '/video/video8.mp4',
   ];
   
-  // Optimized video component with loading state and error handling
-  const VideoCard = ({ src, index }) => {
-    const [isLoaded, setIsLoaded] = useState(false);
-    const [hasError, setHasError] = useState(false);
-    const videoRef = useRef(null);
-    
-    // Store video ref for global access
-    if (videoRef.current) {
-      videoRefs[`video-${index}`] = videoRef.current;
-    }
-    
-    // Preload video when component mounts
-    useEffect(() => {
-      const video = videoRef.current;
-      if (!video) return;
-      
-      // Check if already loaded
-      if (video.readyState >= 3) {
-        setIsLoaded(true);
-        return;
-      }
-      
-      // Try to load with low-quality first for performance
-      video.playsInline = true;
-      video.muted = true;
-      video.setAttribute('playsinline', '');
-      video.setAttribute('muted', '');
-      video.load();
-      
-      // Handle events
-      const handleCanPlay = () => setIsLoaded(true);
-      const handleError = () => setHasError(true);
-      
-      video.addEventListener('canplay', handleCanPlay);
-      video.addEventListener('error', handleError);
-      
-      return () => {
-        video.removeEventListener('canplay', handleCanPlay);
-        video.removeEventListener('error', handleError);
-      };
-    }, [index]);
-
-    return (
-      <div className="relative w-44 h-[302px] flex-shrink-0 mx-4 rounded-xl overflow-hidden">
-        {/* Loading state */}
-        {!isLoaded && !hasError && (
-          <div className="absolute inset-0 bg-gray-800 animate-pulse z-0 rounded-xl"></div>
-        )}
-        
-        {/* Error state */}
-        {hasError && (
-          <div className="absolute inset-0 bg-gray-900 flex items-center justify-center z-0 rounded-xl">
-            <div className="text-gray-500 text-xs">Video unavailable</div>
-          </div>
-        )}
-        
-        {/* Gradient overlay */}
-        <div className="w-full h-full bg-gradient-to-r from-gray-900/30 to-gray-900/20 absolute z-10"></div>
-        
-        {/* Video element with optimization */}
-        <video
-          ref={videoRef}
-          muted
-          autoPlay
-          loop
-          playsInline
-          preload="metadata"
-          className={`w-full h-full object-cover rounded-xl transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
-        >
-          <source src={src} type="video/mp4" />
-        </video>
-      </div>
-    );
-  };
+  // Video component with simpler approach (like in Carousel)
+  const VideoCard = ({ src }) => (
+    <div className="relative w-44 h-[302px] flex-shrink-0 mx-4 rounded-xl overflow-hidden">
+      {/* Simplified gradient overlay */}
+      <div className="w-full h-full bg-gradient-to-r from-gray-900/30 to-gray-900/20 absolute z-10"></div>
+      {/* Additional subtle overall tint - helps hide loading */}
+      <div className="w-full h-full bg-black/20 absolute z-5"></div>
+      <video
+        muted
+        autoPlay
+        loop
+        playsInline
+        preload="metadata"
+        className="w-full h-full object-cover rounded-xl"
+        style={{ pointerEvents: 'none' }}
+      >
+        <source src={src} type="video/mp4" />
+      </video>
+    </div>
+  );
 
   const handleWaitlist = async () => {
     if (!user) return;
@@ -156,21 +100,25 @@ const Hero = () => {
       {/* Video rows positioned in center with no gap between rows */}
       <div className="absolute inset-0 flex items-center justify-center z-0">
         <div className="w-full flex flex-col justify-center items-center h-full">
+          {/* Edge shadows - Left and Right */}
+          <div className="absolute left-0 top-0 bottom-0 h-full w-24 bg-gradient-to-r from-black to-transparent z-20"></div>
+          <div className="absolute right-0 top-0 bottom-0 h-full w-24 bg-gradient-to-l from-black to-transparent z-20"></div>
+          
           {/* First row - videos moving left */}
           <div className="w-full h-[302px] overflow-hidden">
             <Marquee
               gradient={false}
-              speed={60}
+              speed={45}
               direction="left"
               pauseOnHover={false}
               play={true}
             >
               {videos.map((video, index) => (
-                <VideoCard key={`row1-${index}`} src={video} index={`row1-${index}`} />
+                <VideoCard key={`row1-${index}`} src={video} />
               ))}
               {/* Add more videos to prevent gaps */}
               {videos.slice(0, 4).map((video, index) => (
-                <VideoCard key={`row1-extra-${index}`} src={video} index={`row1-extra-${index}`} />
+                <VideoCard key={`row1-extra-${index}`} src={video} />
               ))}
             </Marquee>
           </div>
@@ -178,18 +126,18 @@ const Hero = () => {
           {/* Second row - videos moving right (no margin/gap between rows) */}
           <div className="w-full h-[302px] overflow-hidden">
             <Marquee
-              gradient={false}
-              speed={60}
+              gradient={false} 
+              speed={35}
               direction="right"
               pauseOnHover={false}
               play={true}
             >
               {videos.map((video, index) => (
-                <VideoCard key={`row2-${index}`} src={video} index={`row2-${index}`} />
+                <VideoCard key={`row2-${index}`} src={video} />
               ))}
               {/* Add more videos to prevent gaps */}
               {videos.slice(0, 4).map((video, index) => (
-                <VideoCard key={`row2-extra-${index}`} src={video} index={`row2-extra-${index}`} />
+                <VideoCard key={`row2-extra-${index}`} src={video} />
               ))}
             </Marquee>
           </div>
