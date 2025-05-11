@@ -1,0 +1,193 @@
+// src/components/Hero.jsx
+import React, { useState, useEffect } from 'react';
+import Marquee from 'react-fast-marquee';
+import WaitlistForm from './WaitlistForm';
+import { useAuth } from "../hooks/useAuth";
+import { addToWaitlist } from "../services/authService";
+import emailjs from "emailjs-com";
+import JoinModal from "./JoinModal";
+
+const SERVICE_ID = "service_0wx2eep";
+const TEMPLATE_ID = "template_9dey8e9";
+const USER_ID = "n8kbbJ3UfJSEn4FHD";
+
+const Hero = () => {
+  const { user } = useAuth();
+  const [email, setEmail] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [waitlistMsg, setWaitlistMsg] = useState("");
+  const [waitlistLoading, setWaitlistLoading] = useState(false);
+  const [isOnWaitlist, setIsOnWaitlist] = useState(false);
+  
+  // Check if user has joined waitlist before (using localStorage)
+  useEffect(() => {
+    if (!user) return;
+    // Check if this user has already joined the waitlist
+    const waitlistStatus = localStorage.getItem(`waitlist_${user.uid}`);
+    if (waitlistStatus === 'joined') {
+      setIsOnWaitlist(true);
+      setWaitlistMsg("You're on the waitlist!");
+    }
+  }, [user]);
+
+  // Mock video data - replace with your actual video paths
+  const videos = [
+    '/video/video1.mp4',
+    '/video/video2.mp4',
+    '/video/video3.mp4',
+    '/video/video4.mp4',
+    '/video/video5.mp4',
+    '/video/video6.mp4',
+    '/video/video7.mp4',
+    '/video/video8.mp4',
+  ];
+  
+  // Video component with updated dimensions (175px width, 302px height)
+  const VideoCard = ({ src }) => (
+    <div className="relative w-44 h-[302px] flex-shrink-0 mx-4 rounded-xl overflow-hidden">
+      <div className="w-full h-full bg-gradient-to-r from-gray-900/30 to-gray-900/20 absolute z-10"></div>
+      <video
+        muted
+        autoPlay
+        loop
+        playsInline
+        preload="metadata"
+        className="w-full h-full object-cover rounded-xl"
+      >
+        <source src={src} type="video/mp4" />
+      </video>
+    </div>
+  );
+
+  const handleWaitlist = async () => {
+    if (!user) return;
+    setWaitlistLoading(true);
+    try {
+      await addToWaitlist(user.email, user.uid);
+      setWaitlistMsg("You've been added to our waitlist!");
+      setIsOnWaitlist(true);
+      
+      // Save waitlist status to localStorage to persist after refresh
+      localStorage.setItem(`waitlist_${user.uid}`, 'joined');
+      
+      // Send notification email using EmailJS
+      try {
+        const templateParams = {
+          user_email: user.email,
+          message: `New waitlist entry!`,
+          reply_to: user.email
+        };
+        
+        await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams, USER_ID);
+      } catch (emailError) {
+        console.error("EmailJS notification failed:", emailError);
+        // Continue even if email fails - user is still added to waitlist
+      }
+      
+    } catch (err) {
+      setWaitlistMsg("Failed to add to waitlist. Please try again.");
+      console.error("Waitlist error:", err);
+    }
+    setWaitlistLoading(false);
+  };
+
+  return (
+    <div className="h-screen w-full flex items-center justify-center overflow-hidden bg-black relative bottom-8" style={{fontFamily: "Satoshi"}}>
+      {/* Video rows positioned in center with no gap between rows */}
+      <div className="absolute inset-0 flex items-center justify-center z-0">
+        <div className="w-full flex flex-col justify-center items-center h-full">
+          {/* First row - videos moving left */}
+          <div className="w-full h-[302px] overflow-hidden">
+            <Marquee
+              gradient={false}
+              speed={60}
+              direction="left"
+              pauseOnHover={false}
+              play={true}
+            >
+              {videos.map((video, index) => (
+                <VideoCard key={`row1-${index}`} src={video} />
+              ))}
+              {/* Add a few more videos to prevent gaps */}
+              {videos.slice(0, 3).map((video, index) => (
+                <VideoCard key={`row1-extra-${index}`} src={video} />
+              ))}
+            </Marquee>
+          </div>
+          
+          {/* Second row - videos moving right (no margin/gap between rows) */}
+          <div className="w-full h-[302px] overflow-hidden">
+            <Marquee
+              gradient={false}
+              speed={60}
+              direction="right"
+              pauseOnHover={false}
+              play={true}
+            >
+              {videos.map((video, index) => (
+                <VideoCard key={`row2-${index}`} src={video} />
+              ))}
+              {/* Add a few more videos to prevent gaps */}
+              {videos.slice(0, 3).map((video, index) => (
+                <VideoCard key={`row2-extra-${index}`} src={video} />
+              ))}
+            </Marquee>
+          </div>
+        </div>
+      </div>
+      
+      {/* Darker gradient overlay with reduced opacity */}
+      <div className="absolute inset-0 bg-[#0B0D0D]/80 z-10"></div>
+      
+      {/* Main content */}
+      <div className="w-full max-w-4xl mx-auto px-4 text-center z-20">
+        <h2 className="text-[20px] md:text-3xl font-bold mb-6 text-white">
+          Find your next favorite artist in<br/>30 seconds.
+        </h2>
+        <p className="max-w-2xl mx-auto mb-10 text-white/80">
+          Get early access to the future of music ownership and streaming.
+        </p>
+        {!user ? (
+          <div className="flex flex-col items-center gap-4">
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="Enter your E-mail"
+              className="w-full max-w-xs py-3 px-4 bg-black border border-white/30 rounded-md focus:outline-none focus:border-[#29F2C0] text-white"
+            />
+            <button
+              className="bg-[#29F2C0] text-black py-2 px-8 rounded-md hover:opacity-90 transition-all font-bold"
+              onClick={() => setShowModal(true)}
+            >
+              Join
+            </button>
+            <JoinModal open={showModal} onClose={() => setShowModal(false)} />
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-4">
+            <div className="text-lg text-white">Welcome, {user.email}</div>
+            
+            {isOnWaitlist ? (
+              <div className="text-[#29F2C0] font-medium bg-[#29F2C0]/10 py-3 px-6 rounded-md border border-[#29F2C0]/30">
+                You're on the waitlist! We'll notify you when access is available.
+              </div>
+            ) : (
+              <button
+                className="bg-[#29F2C0] text-black py-2 px-8 rounded-md hover:opacity-90 transition-all font-bold"
+                onClick={handleWaitlist}
+                disabled={waitlistLoading}
+              >
+                {waitlistLoading ? "Adding..." : "Join Waitlist"}
+              </button>
+            )}
+            
+            {waitlistMsg && !isOnWaitlist && <div className="text-green-400 mt-2">{waitlistMsg}</div>}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Hero;
