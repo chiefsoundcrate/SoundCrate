@@ -1,3 +1,4 @@
+// src/hooks/useAuth.js
 import { createContext, useContext, useState, useEffect } from "react";
 import { auth, db } from "../services/firebase";
 import { doc, getDoc } from "firebase/firestore";

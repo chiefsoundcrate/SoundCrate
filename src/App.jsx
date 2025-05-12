@@ -16,10 +16,8 @@ function Layout() {
       <Navbar />
       <Hero />
       <Carousel />
-      <Leaderboard />
-      <main className="flex-1 w-full max-w-5xl mx-auto px-2 py-4">
-        <Outlet />
-      </main>
+      
+      
       <Footer />
     </div>
   );

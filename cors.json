@@ -1,0 +1,8 @@
+[
+    {
+      "origin": ["http://localhost:5173", "https://soundcrate-8f93c.web.app", "https://soundcrate-8f93c.firebaseapp.com"],
+      "method": ["GET", "PUT", "POST", "DELETE", "HEAD"],
+      "maxAgeSeconds": 3600,
+      "responseHeader": ["Content-Type", "Authorization", "Content-Length", "User-Agent", "x-goog-resumable"]
+    }
+  ]

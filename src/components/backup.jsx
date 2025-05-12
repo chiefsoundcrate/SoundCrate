@@ -6,9 +6,6 @@ import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import WaveSurfer from "wavesurfer.js";
 import { useAuth } from "../hooks/useAuth";
 import { X, Upload, Play, Music, Image, CheckCircle, Pause } from "lucide-react";
-// Updated FFmpeg imports
-import { FFmpeg } from '@ffmpeg/ffmpeg';
-import { fetchFile, toBlobURL } from '@ffmpeg/util';
 
 // Set app element for react-modal accessibility
 if (typeof document !== 'undefined') {
@@ -33,49 +30,6 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
   const waveformRef = useRef(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [ffmpeg, setFfmpeg] = useState(null);
-  const [isFFmpegLoading, setIsFFmpegLoading] = useState(true);
-  const [trimmingAudio, setTrimmingAudio] = useState(false);
-
-  // Load FFmpeg when component mounts
-  useEffect(() => {
-    const loadFfmpeg = async () => {
-      try {
-        const ffmpegInstance = new FFmpeg();
-        
-        // Load FFmpeg core
-        await ffmpegInstance.load({
-          coreURL: await toBlobURL(
-            'https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js',
-            'application/javascript'
-          ),
-          wasmURL: await toBlobURL(
-            'https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.wasm',
-            'application/wasm'
-          )
-        });
-        
-        setFfmpeg(ffmpegInstance);
-        setIsFFmpegLoading(false);
-      } catch (error) {
-        console.error("Failed to load FFmpeg:", error);
-        setError("Failed to initialize audio processing tools. Please try again later.");
-      }
-    };
-
-    loadFfmpeg();
-    
-    // Cleanup function
-    return () => {
-      if (ffmpeg) {
-        try {
-          ffmpeg.terminate();
-        } catch (e) {
-          console.log("FFmpeg termination error:", e);
-        }
-      }
-    };
-  }, []);
 
   // Check if user is authenticated
   if (isOpen && !user) {
@@ -98,42 +52,41 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
     if (isOpen) {
       setCurrentStep(1);
       setError("");
-      setTrimmingAudio(false);
     }
   }, [isOpen]);
 
   // Load audio for trimming
-  const handleAudioChange = async (e) => {
+  const handleAudioChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
+    
     // Validate file type
     if (!file.type.startsWith('audio/')) {
       setError("Please select a valid audio file");
       return;
     }
-
+    
     // Validate file size (10MB max)
-    if (file.size > 20 * 1024 * 1024) {
-      setError("Audio file must be less than 20MB");
+    if (file.size > 10 * 1024 * 1024) {
+      setError("Audio file must be less than 10MB");
       return;
     }
-
+    
     setAudio(file);
     setError(""); // Clear any previous errors
-
+    
     // Create audio preview URL
     const url = URL.createObjectURL(file);
     setAudioUrl(url);
-
+    
     // Initialize WaveSurfer with a small delay to ensure DOM is ready
     setTimeout(() => {
       if (wavesurferRef.current) {
         wavesurferRef.current.destroy();
       }
-
+      
       if (!waveformRef.current) return;
-
+      
       wavesurferRef.current = WaveSurfer.create({
         container: waveformRef.current,
         waveColor: "#29F2C0",
@@ -143,15 +96,15 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
         responsive: true,
         cursorColor: "#ffffff"
       });
-
+      
       wavesurferRef.current.load(url);
-
+      
       wavesurferRef.current.on("ready", () => {
         const duration = wavesurferRef.current.getDuration();
         // Set end trim to either full duration or 30s, whichever is shorter
         setTrimEnd(Math.min(30, duration));
       });
-
+      
       wavesurferRef.current.on("error", (err) => {
         console.error("WaveSurfer error:", err);
         setError("Failed to load audio preview. Please try another file.");
@@ -167,19 +120,19 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
   const handleCoverChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
+    
     // Validate file type
     if (!file.type.startsWith('image/')) {
       setError("Please select a valid image file");
       return;
     }
-
+    
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
       setError("Cover image must be less than 5MB");
       return;
     }
-
+    
     setCover(file);
     setCoverPreview(URL.createObjectURL(file));
     setError(""); // Clear any previous errors
@@ -188,7 +141,7 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
   // Play the current trimmed section for preview
   const handlePreviewPlay = () => {
     if (!wavesurferRef.current) return;
-
+    
     if (isPlaying) {
       wavesurferRef.current.pause();
       setIsPlaying(false);
@@ -198,82 +151,28 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
     }
   };
 
-  // Updated FFmpeg function for trimming audio
-  const trimAndSetAudio = async () => {
-    if (!ffmpeg || !audio) {
-      setError("FFmpeg not initialized or no audio file selected.");
-      return null;
-    }
-
-    setTrimmingAudio(true);
-    try {
-      // Convert input file to ArrayBuffer
-      const audioData = await fetchFile(audio);
-      
-      // Write file to FFmpeg virtual file system
-      await ffmpeg.writeFile('input.mp3', audioData);
-
-      const startTime = parseFloat(trimStart);
-      const endTime = parseFloat(trimEnd);
-      const duration = endTime - startTime;
-
-      if (isNaN(startTime) || isNaN(endTime) || startTime < 0 || endTime <= startTime) {
-        setError("Invalid trim start or end times.");
-        return null;
-      }
-
-      // Run FFmpeg command to trim the audio
-      await ffmpeg.exec([
-        '-i', 'input.mp3', 
-        '-ss', `${startTime}`, 
-        '-t', `${duration}`, 
-        '-c:a', 'libmp3lame', 
-        'output.mp3'
-      ]);
-
-      // Read the result file
-      const trimmedData = await ffmpeg.readFile('output.mp3');
-      
-      // Convert to blob and create file
-      const trimmedBlob = new Blob([trimmedData.buffer], { type: 'audio/mp3' });
-      const trimmedFile = new File([trimmedBlob], 'trimmed_audio.mp3', { type: 'audio/mp3' });
-
-      // Clean up virtual file system
-      await ffmpeg.deleteFile('input.mp3');
-      await ffmpeg.deleteFile('output.mp3');
-
-      return trimmedFile;
-    } catch (err) {
-      console.error("FFmpeg trimming error:", err);
-      setError(`Audio trimming failed: ${err.message}. Please try again.`);
-      return null;
-    } finally {
-      setTrimmingAudio(false);
-    }
-  };
-
   // Navigate between steps
-  const goToNextStep = async () => {
-    setError("");
+  const goToNextStep = () => {
+    // Validate current step
     if (currentStep === 1) {
       if (!title.trim() || !artist.trim()) {
         setError("Please enter both artist name and song title");
         return;
       }
-      setCurrentStep(2);
     } else if (currentStep === 2) {
       if (!cover) {
         setError("Please upload a cover image");
         return;
       }
-      setCurrentStep(3);
     } else if (currentStep === 3) {
       if (!audio) {
         setError("Please upload an audio file");
         return;
       }
-      setCurrentStep(4);
     }
+    
+    setError("");
+    setCurrentStep(prev => Math.min(prev + 1, 4));
   };
 
   const goToPreviousStep = () => {
@@ -284,44 +183,28 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
   // Upload files and save metadata to Firestore
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    
     // Validate inputs
     if (!artist.trim() || !title.trim() || !cover || !audio) {
       setError("All fields are required");
       return;
     }
-
-    if (trimmingAudio) {
-      setError("Audio is currently being trimmed. Please wait.");
-      return;
-    }
-
+    
     setLoading(true);
     setError("");
-
-    let trimmedAudioFile = audio;
-    if (ffmpeg) {
-      const result = await trimAndSetAudio();
-      if (result) {
-        trimmedAudioFile = result;
-      } else {
-        setLoading(false);
-        return; // Stop if trimming fails
-      }
-    }
-
+    
     try {
       // Generate unique file names with timestamps to avoid collisions
       const timestamp = Date.now();
       const coverFileName = `${timestamp}_${cover.name.replace(/[^a-zA-Z0-9_.]/g, '_')}`;
-      const audioFileName = `${timestamp}_trimmed_${trimmedAudioFile.name.replace(/[^a-zA-Z0-9_.]/g, '_')}`;
-
+      const audioFileName = `${timestamp}_${audio.name.replace(/[^a-zA-Z0-9_.]/g, '_')}`;
+      
       // Upload cover with progress tracking
       const coverRef = ref(storage, `public_songs/covers/${coverFileName}`);
       const coverUploadTask = uploadBytesResumable(coverRef, cover);
-
+      
       // Track cover upload progress
-      coverUploadTask.on('state_changed',
+      coverUploadTask.on('state_changed', 
         (snapshot) => {
           const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
           setUploadProgress(prev => ({ ...prev, cover: progress }));
@@ -332,17 +215,17 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
           setLoading(false);
         }
       );
-
+      
       // Wait for cover upload to complete
       await coverUploadTask;
       const coverUrl = await getDownloadURL(coverRef);
-
-      // Upload trimmed audio with progress tracking
+      
+      // Upload audio with progress tracking
       const audioRef = ref(storage, `public_songs/audio/${audioFileName}`);
-      const audioUploadTask = uploadBytesResumable(audioRef, trimmedAudioFile);
-
+      const audioUploadTask = uploadBytesResumable(audioRef, audio);
+      
       // Track audio upload progress
-      audioUploadTask.on('state_changed',
+      audioUploadTask.on('state_changed', 
         (snapshot) => {
           const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
           setUploadProgress(prev => ({ ...prev, audio: progress }));
@@ -353,11 +236,11 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
           setLoading(false);
         }
       );
-
+      
       // Wait for audio upload to complete
       await audioUploadTask;
       const audioStorageUrl = await getDownloadURL(audioRef);
-
+      
       // Save metadata to Firestore
       const docRef = await addDoc(collection(db, "songs"), {
         artist: artist.trim(),
@@ -370,9 +253,9 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
         createdAt: serverTimestamp(),
         userId: user.uid, // Store user ID with the song
       });
-
+      
       setUploadSuccess(true);
-
+      
       // Reset form after a short delay to show success
       setTimeout(() => {
         setArtist("");
@@ -387,7 +270,7 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
         setUploadSuccess(false);
         onRequestClose();
       }, 1500);
-
+      
     } catch (err) {
       console.error("Upload error:", err);
       setError(`Upload failed: ${err.message}. Please check your connection and try again.`);
@@ -398,15 +281,15 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
 
   // Clean up on modal close
   const handleModalClose = () => {
-    // Don't close if currently uploading or trimming
-    if (loading || trimmingAudio) return;
-
+    // Don't close if currently uploading
+    if (loading) return;
+    
     // Destroy wavesurfer instance
     if (wavesurferRef.current) {
       wavesurferRef.current.destroy();
       wavesurferRef.current = null;
     }
-
+    
     // Revoke object URLs
     if (audioUrl && audioUrl.startsWith('blob:')) {
       URL.revokeObjectURL(audioUrl);
@@ -414,7 +297,7 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
     if (coverPreview) {
       URL.revokeObjectURL(coverPreview);
     }
-
+    
     // Reset state
     setError("");
     setUploadProgress({ cover: 0, audio: 0 });
@@ -427,17 +310,7 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
     setTrimStart(0);
     setTrimEnd(30);
     setCurrentStep(1);
-
-    if (ffmpeg) {
-      try {
-        ffmpeg.terminate();
-        setFfmpeg(null);
-        setIsFFmpegLoading(true);
-      } catch (e) {
-        console.log("FFmpeg termination error:", e);
-      }
-    }
-
+    
     // Call the provided close handler
     onRequestClose();
   };
@@ -448,19 +321,19 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
       <div className="flex justify-center mb-6">
         {[1, 2, 3, 4].map((step) => (
           <div key={step} className="flex items-center">
-            <div
+            <div 
               className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                currentStep === step
-                  ? 'bg-[#29F2C0] text-black'
-                  : currentStep > step
-                    ? 'bg-[#29F2C0]/20 text-[#29F2C0]'
+                currentStep === step 
+                  ? 'bg-[#29F2C0] text-black' 
+                  : currentStep > step 
+                    ? 'bg-[#29F2C0]/20 text-[#29F2C0]' 
                     : 'bg-gray-800 text-gray-400'
               }`}
             >
               {step}
             </div>
             {step < 4 && (
-              <div
+              <div 
                 className={`w-12 h-1 ${
                   currentStep > step ? 'bg-[#29F2C0]/50' : 'bg-gray-800'
                 }`}
@@ -522,39 +395,22 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
       onRequestClose={handleModalClose}
       contentLabel="Upload Song"
       className="bg-[#181818] p-6 rounded-xl max-w-lg mx-auto mt-20 outline-none relative transform transition-all duration-300 ease-in-out"
-      style={{
-              overlay: {
-                backgroundColor: 'rgba(0, 0, 0, 0.75)',
-                display: 'flex',
-                alignItems: 'flex-start',
-                justifyContent: 'center',
-                zIndex: 50,
-                paddingTop: '5vh',
-                paddingBottom: '5vh',
-                overflow: 'auto'
-              },
-              content: {
-                maxHeight: '90vh',
-                overflowY: 'auto',
-                animation: isOpen ? 'fadeIn 0.3s ease-out' : 'fadeOut 0.3s ease-in'
-              }
-            }}
-            overlayClassName="fixed inset-0 z-50 overflow-y-auto"
+      
     >
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold text-white">Upload Song</h2>
         <button
           onClick={handleModalClose}
           className="text-white hover:text-[#29F2C0] transition-colors"
-          disabled={loading || trimmingAudio}
+          disabled={loading}
           aria-label="Close modal"
         >
           <X size={24} />
         </button>
       </div>
-
+      
       {renderStepIndicators()}
-
+      
       {uploadSuccess ? (
         <div className="alert alert-success bg-green-500/20 border border-green-500 rounded p-4 text-green-300">
           <CheckCircle size={24} />
@@ -576,7 +432,7 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
           {currentStep === 1 && (
             <div className="flex flex-col gap-4 animate-fadeIn">
               <h3 className="text-lg font-medium text-white">Basic Information</h3>
-
+              
               {/* Artist Name */}
               <div className="form-control">
                 <label className="label">
@@ -591,7 +447,7 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
                   className="input input-bordered bg-[#222] text-white border-gray-700 focus:border-[#29F2C0]"
                 />
               </div>
-
+              
               {/* Song Title */}
               <div className="form-control">
                 <label className="label">
@@ -608,18 +464,18 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
               </div>
             </div>
           )}
-
+          
           {/* Step 2: Cover Image */}
           {currentStep === 2 && (
             <div className="flex flex-col gap-4 animate-fadeIn">
               <h3 className="text-lg font-medium text-white">Cover Artwork</h3>
-
+              
               <div className="flex flex-col items-center gap-4">
                 {coverPreview ? (
                   <div className="relative w-48 h-48 rounded-lg overflow-hidden">
-                    <img
-                      src={coverPreview}
-                      alt="Cover preview"
+                    <img 
+                      src={coverPreview} 
+                      alt="Cover preview" 
                       className="w-full h-full object-cover"
                     />
                     <button
@@ -650,12 +506,12 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
               </div>
             </div>
           )}
-
+          
           {/* Step 3: Audio File */}
           {currentStep === 3 && (
             <div className="flex flex-col gap-4 animate-fadeIn">
               <h3 className="text-lg font-medium text-white">Audio File</h3>
-
+              
               {audio ? (
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center gap-2 p-3 bg-[#222] rounded">
@@ -685,11 +541,11 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
                   {/* Waveform visualization */}
                   {audioUrl && (
                     <div className="space-y-4">
-                      <div
-                        ref={waveformRef}
+                      <div 
+                        ref={waveformRef} 
                         className="w-full bg-[#222] rounded p-4"
                       />
-
+                      
                       {/* Trim controls */}
                       <div className="flex gap-4">
                         <div className="form-control flex-1">
@@ -706,7 +562,7 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
                             className="input input-bordered input-sm bg-[#222] text-white border-gray-700"
                           />
                         </div>
-
+                        
                         <div className="form-control flex-1">
                           <label className="label">
                             <span className="label-text text-white">End (s)</span>
@@ -721,7 +577,7 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
                           />
                         </div>
                       </div>
-
+                      
                       {/* Preview button */}
                       <button
                         type="button"
@@ -750,12 +606,12 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
               )}
             </div>
           )}
-
+          
           {/* Step 4: Review & Upload */}
           {currentStep === 4 && (
             <div className="flex flex-col gap-4 animate-fadeIn">
               <h3 className="text-lg font-medium text-white">Review & Upload</h3>
-
+              
               {!loading ? (
                 <div className="space-y-4">
                   {/* Summary */}
@@ -766,7 +622,7 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
                     <p className="text-gray-400">Audio: <span className="text-white">{audio?.name}</span></p>
                     <p className="text-gray-400">Trim: <span className="text-white">{trimStart}s - {trimEnd}s</span></p>
                   </div>
-
+                  
                   {/* Upload button */}
                   <button
                     onClick={handleSubmit}
@@ -782,18 +638,17 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
                     <CircularProgress value={uploadProgress.cover} label="Cover" />
                     <CircularProgress value={uploadProgress.audio} label="Audio" />
                   </div>
-
+                  
                   <p className="text-center text-gray-400">
-                    {uploadProgress.cover < 100 ? 'Uploading cover image...' :
-                      uploadProgress.audio < 100 ? 'Uploading audio file...' :
-                        'Saving to database...'}
+                    {uploadProgress.cover < 100 ? 'Uploading cover image...' : 
+                     uploadProgress.audio < 100 ? 'Uploading audio file...' : 
+                     'Saving to database...'}
                   </p>
-                  {trimmingAudio && <p className="text-center text-yellow-400">Trimming audio...</p>}
                 </div>
               )}
             </div>
           )}
-
+          
           {/* Navigation buttons */}
           {!loading && !uploadSuccess && (
             <div className="flex gap-4 mt-6">
@@ -806,7 +661,7 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
                   Previous
                 </button>
               )}
-
+              
               {currentStep < 4 && (
                 <button
                   type="button"
@@ -824,4 +679,4 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
   );
 };
 
-export default UploadModal;
+export default UploadModal
