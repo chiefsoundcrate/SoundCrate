@@ -4,11 +4,12 @@ import { db, storage } from "../services/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import WaveSurfer from "wavesurfer.js";
+import Regions from "wavesurfer.js/dist/plugins/regions";
 import { useAuth } from "../hooks/useAuth";
-import { X, Upload, Play, Music, Image, CheckCircle, Pause } from "lucide-react";
+import { X, Upload, Play, Music, Image, CheckCircle, Pause, Scissors } from "lucide-react";
 // Updated FFmpeg imports
-import { FFmpeg } from '@ffmpeg/ffmpeg';
-import { fetchFile, toBlobURL } from '@ffmpeg/util';
+import { FFmpeg } from "@ffmpeg/ffmpeg";
+import { fetchFile } from "@ffmpeg/util";
 
 // Set app element for react-modal accessibility
 if (typeof document !== 'undefined') {
@@ -31,35 +32,43 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const wavesurferRef = useRef(null);
   const waveformRef = useRef(null);
+  const regionRef = useRef(null);
+  const regionsRef = useRef(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [ffmpeg, setFfmpeg] = useState(null);
   const [isFFmpegLoading, setIsFFmpegLoading] = useState(true);
   const [trimmingAudio, setTrimmingAudio] = useState(false);
+  const [duration, setDuration] = useState(0);
 
-  // Load FFmpeg when component mounts
+  // Load FFmpeg when component mounts - Using CDN URLs to avoid CORS issues
   useEffect(() => {
     const loadFfmpeg = async () => {
       try {
         const ffmpegInstance = new FFmpeg();
         
-        // Load FFmpeg core
+        // Use the CDN URLs directly
         await ffmpegInstance.load({
-          coreURL: await toBlobURL(
-            'https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js',
-            'application/javascript'
-          ),
-          wasmURL: await toBlobURL(
-            'https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.wasm',
-            'application/wasm'
-          )
+          coreURL: "https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js",
+          wasmURL: "https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.wasm"
         });
         
         setFfmpeg(ffmpegInstance);
         setIsFFmpegLoading(false);
       } catch (error) {
         console.error("Failed to load FFmpeg:", error);
-        setError("Failed to initialize audio processing tools. Please try again later.");
+        // Try alternative approach for local development
+        try {
+          const ffmpegInstance = new FFmpeg();
+          // For local development, try loading from local files
+          await ffmpegInstance.load();
+          setFfmpeg(ffmpegInstance);
+          setIsFFmpegLoading(false);
+        } catch (fallbackError) {
+          console.error("FFmpeg fallback failed:", fallbackError);
+          setError("Failed to initialize audio processing tools. Audio trimming will not be available.");
+          setIsFFmpegLoading(false);
+        }
       }
     };
 
@@ -102,6 +111,15 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
     }
   }, [isOpen]);
 
+  // Format time to MM:SS
+  const formatTime = (time) => {
+    if (isNaN(time)) return "0:00";
+    
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
   // Load audio for trimming
   const handleAudioChange = async (e) => {
     const file = e.target.files[0];
@@ -113,7 +131,7 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
       return;
     }
 
-    // Validate file size (10MB max)
+    // Validate file size (20MB max)
     if (file.size > 20 * 1024 * 1024) {
       setError("Audio file must be less than 20MB");
       return;
@@ -134,22 +152,56 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
 
       if (!waveformRef.current) return;
 
+      // Create regions plugin
+      const regions = Regions.create();
+
+      // Create wavesurfer instance
       wavesurferRef.current = WaveSurfer.create({
         container: waveformRef.current,
-        waveColor: "#29F2C0",
-        progressColor: "#0A0A0A",
-        height: 80,
+        waveColor: "#666666",
+        progressColor: "#29F2C0",
+        height: 100,
         barWidth: 2,
         responsive: true,
-        cursorColor: "#ffffff"
+        cursorColor: "#ffffff",
+        plugins: [regions]
       });
+
+      regionsRef.current = regions;
 
       wavesurferRef.current.load(url);
 
       wavesurferRef.current.on("ready", () => {
-        const duration = wavesurferRef.current.getDuration();
+        const audioDuration = wavesurferRef.current.getDuration();
+        setDuration(audioDuration);
+        
         // Set end trim to either full duration or 30s, whichever is shorter
-        setTrimEnd(Math.min(30, duration));
+        const endTime = Math.min(30, audioDuration);
+        setTrimEnd(endTime);
+        
+        // Clear any existing regions - check if regionsRef exists first
+if (regionsRef.current) {
+  regionsRef.current.clearRegions();
+}
+
+// Create the trim region with better visibility
+regionRef.current = regionsRef.current.addRegion({
+  start: 0,
+  end: endTime,
+  color: 'rgba(255, 0, 0, 0.3)', // Changed to red for selected area
+  drag: true,
+  resize: true,
+  handleStyle: {
+    left: { width: '24px', height: '100%', backgroundColor: '#29F2C0', cursor: 'col-resize' },
+    right: { width: '24px', height: '100%', backgroundColor: '#29F2C0', cursor: 'col-resize' }
+  }
+});
+      });
+
+      // Handle region updates
+      regions.on("region-updated", (region) => {
+        setTrimStart(region.start);
+        setTrimEnd(region.end);
       });
 
       wavesurferRef.current.on("error", (err) => {
@@ -198,11 +250,12 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
     }
   };
 
-  // Updated FFmpeg function for trimming audio
+  // Updated FFmpeg function for trimming audio - Fixed to save from 0 to trim start
   const trimAndSetAudio = async () => {
     if (!ffmpeg || !audio) {
-      setError("FFmpeg not initialized or no audio file selected.");
-      return null;
+      console.warn("FFmpeg not initialized or no audio file selected.");
+      // Return the original audio if FFmpeg is not available
+      return audio;
     }
 
     setTrimmingAudio(true);
@@ -213,30 +266,32 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
       // Write file to FFmpeg virtual file system
       await ffmpeg.writeFile('input.mp3', audioData);
 
+      // Trim from 0 to trimStart (not from trimStart to trimEnd)
       const startTime = parseFloat(trimStart);
-      const endTime = parseFloat(trimEnd);
-      const duration = endTime - startTime;
+  const duration = parseFloat(trimEnd - trimStart);
 
-      if (isNaN(startTime) || isNaN(endTime) || startTime < 0 || endTime <= startTime) {
-        setError("Invalid trim start or end times.");
-        return null;
-      }
+  if (isNaN(startTime) || isNaN(duration) || duration <= 0) {
+    setError("Invalid trim selection.");
+    return null;
+  }
 
-      // Run FFmpeg command to trim the audio
-      await ffmpeg.exec([
-        '-i', 'input.mp3', 
-        '-ss', `${startTime}`, 
-        '-t', `${duration}`, 
-        '-c:a', 'libmp3lame', 
-        'output.mp3'
-      ]);
+  console.log(`Trimming audio from ${startTime} to ${trimEnd} seconds (duration: ${duration}s)`);
+
+  // Run FFmpeg command to trim the audio - save the selected part
+  await ffmpeg.exec([
+    '-i', 'input.mp3', 
+    '-ss', `${startTime}`, 
+    '-t', `${duration}`, 
+    '-c:a', 'libmp3lame', 
+    'output.mp3'
+  ]);
 
       // Read the result file
       const trimmedData = await ffmpeg.readFile('output.mp3');
       
       // Convert to blob and create file
       const trimmedBlob = new Blob([trimmedData.buffer], { type: 'audio/mp3' });
-      const trimmedFile = new File([trimmedBlob], 'trimmed_audio.mp3', { type: 'audio/mp3' });
+      const trimmedFile = new File([trimmedBlob], `trimmed_${audio.name}`, { type: 'audio/mp3' });
 
       // Clean up virtual file system
       await ffmpeg.deleteFile('input.mp3');
@@ -245,8 +300,8 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
       return trimmedFile;
     } catch (err) {
       console.error("FFmpeg trimming error:", err);
-      setError(`Audio trimming failed: ${err.message}. Please try again.`);
-      return null;
+      console.warn("Failed to trim audio, using original file");
+      return audio; // Return original file if trimming fails
     } finally {
       setTrimmingAudio(false);
     }
@@ -300,14 +355,15 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
     setError("");
 
     let trimmedAudioFile = audio;
-    if (ffmpeg) {
+    
+    // Only trim if FFmpeg is available and loaded
+    if (ffmpeg && !isFFmpegLoading) {
       const result = await trimAndSetAudio();
       if (result) {
         trimmedAudioFile = result;
-      } else {
-        setLoading(false);
-        return; // Stop if trimming fails
       }
+    } else {
+      console.warn("FFmpeg not available, uploading original audio");
     }
 
     try {
@@ -358,18 +414,20 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
       await audioUploadTask;
       const audioStorageUrl = await getDownloadURL(audioRef);
 
-      // Save metadata to Firestore
-      const docRef = await addDoc(collection(db, "songs"), {
-        artist: artist.trim(),
-        title: title.trim(),
-        coverUrl,
-        audioUrl: audioStorageUrl,
-        trimStart,
-        trimEnd,
-        votes: 0,
-        createdAt: serverTimestamp(),
-        userId: user.uid, // Store user ID with the song
-      });
+      // Save metadata to Firestore - Fixed to save start time as duration
+      // Save metadata to Firestore - Save the correct trimmed duration
+const docRef = await addDoc(collection(db, "songs"), {
+  artist: artist.trim(),
+  title: title.trim(),
+  coverUrl,
+  audioUrl: audioStorageUrl,
+  trimStart: trimStart,
+  trimEnd: trimEnd,
+  duration: trimEnd - trimStart, // Save the actual duration of trimmed audio
+  votes: 0,
+  createdAt: serverTimestamp(),
+  userId: user.uid,
+});
 
       setUploadSuccess(true);
 
@@ -427,16 +485,6 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
     setTrimStart(0);
     setTrimEnd(30);
     setCurrentStep(1);
-
-    if (ffmpeg) {
-      try {
-        ffmpeg.terminate();
-        setFfmpeg(null);
-        setIsFFmpegLoading(true);
-      } catch (e) {
-        console.log("FFmpeg termination error:", e);
-      }
-    }
 
     // Call the provided close handler
     onRequestClose();
@@ -523,23 +571,23 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
       contentLabel="Upload Song"
       className="bg-[#181818] p-6 rounded-xl max-w-lg mx-auto mt-20 outline-none relative transform transition-all duration-300 ease-in-out"
       style={{
-              overlay: {
-                backgroundColor: 'rgba(0, 0, 0, 0.75)',
-                display: 'flex',
-                alignItems: 'flex-start',
-                justifyContent: 'center',
-                zIndex: 50,
-                paddingTop: '5vh',
-                paddingBottom: '5vh',
-                overflow: 'auto'
-              },
-              content: {
-                maxHeight: '90vh',
-                overflowY: 'auto',
-                animation: isOpen ? 'fadeIn 0.3s ease-out' : 'fadeOut 0.3s ease-in'
-              }
-            }}
-            overlayClassName="fixed inset-0 z-50 overflow-y-auto"
+        overlay: {
+          backgroundColor: 'rgba(0, 0, 0, 0.75)',
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'center',
+          zIndex: 50,
+          paddingTop: '5vh',
+          paddingBottom: '5vh',
+          overflow: 'auto'
+        },
+        content: {
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          animation: isOpen ? 'fadeIn 0.3s ease-out' : 'fadeOut 0.3s ease-in'
+        }
+      }}
+      overlayClassName="fixed inset-0 z-50 overflow-y-auto"
     >
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold text-white">Upload Song</h2>
@@ -682,45 +730,45 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
                     </button>
                   </div>
 
-                  {/* Waveform visualization */}
+                  {/* Visual waveform trimming interface */}
                   {audioUrl && (
                     <div className="space-y-4">
-                      <div
-                        ref={waveformRef}
-                        className="w-full bg-[#222] rounded p-4"
-                      />
-
-                      {/* Trim controls */}
-                      <div className="flex gap-4">
-                        <div className="form-control flex-1">
-                          <label className="label">
-                            <span className="label-text text-white">Start (s)</span>
-                          </label>
-                          <input
-                            type="number"
-                            value={trimStart}
-                            onChange={(e) => setTrimStart(parseFloat(e.target.value) || 0)}
-                            min="0"
-                            max={trimEnd - 1}
-                            step="0.1"
-                            className="input input-bordered input-sm bg-[#222] text-white border-gray-700"
-                          />
+                      <div className="relative bg-[#222] rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Scissors size={16} className="text-[#29F2C0]" />
+                          <span className="text-sm text-gray-400">Drag the region to select trim point</span>
                         </div>
-
-                        <div className="form-control flex-1">
-                          <label className="label">
-                            <span className="label-text text-white">End (s)</span>
-                          </label>
-                          <input
-                            type="number"
-                            value={trimEnd}
-                            onChange={(e) => setTrimEnd(parseFloat(e.target.value) || 30)}
-                            min={trimStart + 1}
-                            step="0.1"
-                            className="input input-bordered input-sm bg-[#222] text-white border-gray-700"
-                          />
+                        
+                        {/* Waveform container */}
+                        <div
+                          ref={waveformRef}
+                          className="w-full"
+                          style={{ minHeight: '100px' }}
+                        />
+                        
+                        {/* Time stamps below waveform */}
+                        <div className="flex justify-between text-xs text-gray-500 mt-2 px-1">
+                          <span>0:00</span>
+                          <span>{formatTime(duration / 2)}</span>
+                          <span>{formatTime(duration)}</span>
                         </div>
                       </div>
+
+                     {/* Selected trim info */}
+<div className="bg-[#222] rounded-lg p-4">
+  <div className="text-center">
+    <p className="text-sm text-gray-400 mb-1">Selected portion:</p>
+    <p className="text-2xl font-bold text-[#29F2C0]">
+      {formatTime(trimStart)} - {formatTime(trimEnd)}
+    </p>
+    <p className="text-sm text-gray-400 mt-1">
+      Duration: {formatTime(trimEnd - trimStart)}
+    </p>
+    <p className="text-sm text-gray-500 mt-1">
+      {ffmpeg && !isFFmpegLoading ? 'Drag the red region to adjust selection' : 'Trimming not available'}
+    </p>
+  </div>
+</div>
 
                       {/* Preview button */}
                       <button
@@ -729,7 +777,9 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
                         className="btn btn-outline btn-primary border-[#29F2C0] text-[#29F2C0] hover:bg-[#29F2C0] hover:text-black w-full"
                       >
                         {isPlaying ? <Pause size={20} /> : <Play size={20} />}
-                        {isPlaying ? 'Pause Preview' : 'Play Preview'}
+                        <span className="ml-2">
+                          {isPlaying ? 'Pause Preview' : 'Play Trimmed Preview'}
+                        </span>
                       </button>
                     </div>
                   )}
@@ -737,8 +787,8 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
               ) : (
                 <label className="border-2 border-dashed border-gray-600 rounded-lg p-8 flex flex-col items-center justify-center cursor-pointer hover:border-[#29F2C0] transition-colors">
                   <Upload size={32} className="text-gray-400 mb-2" />
-                  <span className="text-gray-400">Click to upload audio file</span>
-                  <span className="text-gray-500 text-xs mt-1">(Max 10MB)</span>
+                  <span className="text-gray-400 text-center">Click to upload audio file</span>
+                  <span className="text-gray-500 text-xs mt-1">(MP3, WAV, max 20MB)</span>
                   <input
                     type="file"
                     accept="audio/*"
@@ -748,47 +798,90 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
                   />
                 </label>
               )}
+
+              {isFFmpegLoading && (
+                <div className="text-gray-400 text-sm text-center">
+                  <p>Loading audio processing tools...</p>
+                  <div className="mt-2 w-full bg-gray-700 rounded-full h-2">
+                    <div className="h-2 rounded-full bg-[#29F2C0] animate-pulse"></div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
-          {/* Step 4: Review & Upload */}
+          {/* Step 4: Review and Submit */}
           {currentStep === 4 && (
-            <div className="flex flex-col gap-4 animate-fadeIn">
-              <h3 className="text-lg font-medium text-white">Review & Upload</h3>
+            <div className="flex flex-col gap-6 animate-fadeIn">
+              <h3 className="text-lg font-medium text-white">Review & Submit</h3>
 
-              {!loading ? (
-                <div className="space-y-4">
-                  {/* Summary */}
-                  <div className="bg-[#222] rounded p-4 space-y-2">
-                    <p className="text-gray-400">Artist: <span className="text-white">{artist}</span></p>
-                    <p className="text-gray-400">Title: <span className="text-white">{title}</span></p>
-                    <p className="text-gray-400">Cover: <span className="text-white">{cover?.name}</span></p>
-                    <p className="text-gray-400">Audio: <span className="text-white">{audio?.name}</span></p>
-                    <p className="text-gray-400">Trim: <span className="text-white">{trimStart}s - {trimEnd}s</span></p>
+              <div className="flex gap-4 items-center">
+                {/* Cover preview */}
+                {coverPreview && (
+                  <div className="w-24 h-24 rounded overflow-hidden flex-shrink-0">
+                    <img
+                      src={coverPreview}
+                      alt="Cover preview"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
+                )}
 
-                  {/* Upload button */}
-                  <button
-                    onClick={handleSubmit}
-                    className="btn btn-primary bg-[#29F2C0] hover:bg-[#1ed9a3] text-black border-none w-full"
-                  >
-                    Upload Song
-                  </button>
+                {/* Song info */}
+                <div className="flex-1">
+                  <h4 className="text-lg font-medium text-white">{title}</h4>
+                  <p className="text-gray-400">{artist}</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Duration: {formatTime(trimEnd - trimStart)}
+                  </p>
                 </div>
-              ) : (
-                <div className="space-y-6">
-                  {/* Upload progress */}
-                  <div className="flex justify-center gap-8">
+              </div>
+
+              {/* Preview waveform */}
+              {audioUrl && (
+                <div className="bg-[#222] rounded-lg p-4">
+                  <button
+                    type="button"
+                    onClick={handlePreviewPlay}
+                    className="btn btn-sm btn-circle mb-2 bg-[#29F2C0] hover:bg-[#20d3a6] border-none text-black"
+                    aria-label={isPlaying ? "Pause preview" : "Play preview"}
+                  >
+                    {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+                  </button>
+                  <div
+                    ref={waveformRef}
+                    className="w-full"
+                    style={{ minHeight: '60px' }}
+                  />
+                </div>
+              )}
+
+              {/* Submit button */}
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={loading || trimmingAudio}
+                className={`btn ${
+                  loading || trimmingAudio
+                    ? 'bg-gray-600 text-gray-400'
+                    : 'bg-[#29F2C0] hover:bg-[#20d3a6] text-black'
+                } border-none w-full`}
+              >
+                {loading ? 'Uploading...' : trimmingAudio ? 'Processing Audio...' : 'Upload Song'}
+              </button>
+
+              {/* Upload progress visualization */}
+              {loading && (
+                <div className="flex flex-col items-center justify-center gap-4 mt-2">
+                  <div className="flex gap-8">
                     <CircularProgress value={uploadProgress.cover} label="Cover" />
                     <CircularProgress value={uploadProgress.audio} label="Audio" />
                   </div>
-
-                  <p className="text-center text-gray-400">
-                    {uploadProgress.cover < 100 ? 'Uploading cover image...' :
-                      uploadProgress.audio < 100 ? 'Uploading audio file...' :
-                        'Saving to database...'}
+                  <p className="text-sm text-gray-400">
+                    {trimmingAudio
+                      ? "Processing audio file..."
+                      : "Uploading files to storage..."}
                   </p>
-                  {trimmingAudio && <p className="text-center text-yellow-400">Trimming audio...</p>}
                 </div>
               )}
             </div>
@@ -796,32 +889,150 @@ const UploadModal = ({ isOpen, onRequestClose }) => {
 
           {/* Navigation buttons */}
           {!loading && !uploadSuccess && (
-            <div className="flex gap-4 mt-6">
-              {currentStep > 1 && (
+            <div className="flex justify-between mt-4">
+              {currentStep > 1 ? (
                 <button
                   type="button"
                   onClick={goToPreviousStep}
-                  className="btn btn-outline flex-1"
+                  className="btn btn-outline text-white border-gray-700 hover:bg-gray-700"
+                  disabled={loading || trimmingAudio}
                 >
-                  Previous
+                  Back
                 </button>
+              ) : (
+                <div></div> // Empty div for flex spacing
               )}
 
-              {currentStep < 4 && (
+              {currentStep < 4 ? (
                 <button
                   type="button"
                   onClick={goToNextStep}
-                  className="btn btn-primary bg-[#29F2C0] hover:bg-[#1ed9a3] text-black border-none flex-1"
+                  className="btn bg-[#29F2C0] hover:bg-[#20d3a6] text-black border-none"
+                  disabled={loading || trimmingAudio}
                 >
                   Next
                 </button>
-              )}
+              ) : null}
             </div>
           )}
         </form>
       )}
+
+      {/* Additional CSS to enhance the draggable region markers */}
+      <style >{`
+        /* Enhance WaveSurfer region styles */
+        .wavesurfer-region {
+          border-radius: 4px;
+          transition: background 0.2s ease;
+        }
+        
+        /* Hide the default wavesurfer handles as we're using custom ones */
+        .wavesurfer-handle {
+          width: 0 !important;
+          opacity: 0 !important;
+        }
+        
+        /* Custom timestamp marker styling */
+        .timestamp-marker {
+          position: absolute;
+          width: 2px;
+          height: 100%;
+          background-color: rgba(255, 0, 0, 0.8);
+          top: 0;
+          z-index: 10;
+          pointer-events: none;
+        }
+        
+        /* Add custom marker handles for dragging */
+        .marker-handle {
+          position: absolute;
+          width: 20px;
+          height: 40px;
+          background-color: rgba(255, 0, 0, 0.8);
+          border-radius: 4px;
+          bottom: 0;
+          left: -9px;
+          cursor: col-resize;
+          pointer-events: auto;
+        }
+        
+        .marker-handle:hover {
+          background-color: rgb(255, 0, 0);
+        }
+        
+        .marker-handle::before {
+          content: '';
+          position: absolute;
+          top: 8px;
+          left: 6px;
+          width: 8px;
+          height: 24px;
+          background-image: linear-gradient(
+            to right,
+            rgba(255, 255, 255, 0.5) 1px,
+            transparent 1px
+          );
+          background-size: 3px 100%;
+        }
+        
+        .marker-time {
+          position: absolute;
+          top: -30px;
+          left: 50%;
+          transform: translateX(-50%);
+          background-color: #ff0000;
+          color: white;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 12px;
+          white-space: nowrap;
+          pointer-events: none;
+          font-weight: bold;
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Animation for transitions */
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-out forwards;
+        }
+        
+        /* Add controller styles */
+        .waveform-controller {
+          position: absolute;
+          bottom: -30px;
+          left: 50%;
+          transform: translateX(-50%);
+          background-color: #fff;
+          border-radius: 4px;
+          padding: 5px;
+          display: flex;
+          align-items: center;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .controller-button {
+          background: none;
+          border: none;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 30px;
+          height: 30px;
+        }
+        
+        .controller-button:hover {
+          background-color: rgba(0, 0, 0, 0.1);
+          border-radius: 50%;
+        }
+      `}</style>
     </Modal>
   );
 };
 
-export default UploadModal;
+export default UploadModal
