@@ -554,7 +554,7 @@ const Carousel = () => {
       </div>
       
       {/* Add this styling to hide scrollbars while maintaining functionality */}
-      <style jsx global>{`
+      <style >{`
         .hide-scrollbar::-webkit-scrollbar {
           display: none;
         }

@@ -362,8 +362,8 @@ const JoinModal = ({ open, onClose }) => {
           margin: 10px 0;
           border-radius: 10px; /* Less rounded than before (was 55px) */
           display: grid;
-          grid-template-columns: 15% 85%;
-          padding: 0 0.4rem;
+          grid-template-columns: 17px 1fr;
+          padding: 0 !important ;
           border: 1px solid #333;
           transition: border 0.3s ease, transform 0.2s ease;
         }
@@ -374,10 +374,14 @@ const JoinModal = ({ open, onClose }) => {
         }
 
         .input-field i {
-          text-align: center;
+          text-align: ;
           line-height: 40px;
           color: #acacac;
           font-size: 0.8rem;
+          display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
         }
 
         .input-field input {
@@ -388,8 +392,15 @@ const JoinModal = ({ open, onClose }) => {
           font-weight: 400;
           font-size: 0.88rem;
           color: #fff;
-          padding-left: 5px;
+          padding-left: 0px;
+          width:100%;
+          background-color: #232526 !important; // Force background color
+          transition: background-color 5000s ease-in-out 0s !important;
+
         }
+        .input-field input:focus {
+  background-color: #232526 !important;
+}
 
         .input-field input::placeholder {
           color: #aaa;
@@ -438,10 +449,7 @@ const JoinModal = ({ open, onClose }) => {
   color: white;
 }
 
-input:-webkit-autofill {
-  -webkit-box-shadow: 0 0 0 1000px  inset !important; /* your background color */
-  -webkit-text-fill-color: white !important;
-}
+// Change this in your CSS-in-JS
 
         .btn:hover {
           transform: translateY(-3px);
