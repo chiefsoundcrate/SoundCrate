@@ -96,20 +96,20 @@ const Hero = () => {
   };
 
   return (
-    <div className="h-screen w-full flex items-center justify-center overflow-hidden bg-black relative bottom-8" style={{fontFamily: "Satoshi"}}>
+    <div className="h-screen w-full flex items-center justify-center overflow-hidden bg-black relative bottom-8" style={{fontFamily: "Inter"}}>
       {/* Video rows positioned in center with no gap between rows */}
       <div className="absolute inset-0 flex items-center justify-center z-0">
         <div className="w-full flex flex-col justify-center items-center h-full">
           {/* Edge shadows - Left and Right */}
           <div className="absolute left-0 top-0 bottom-0 h-full w-24 bg-gradient-to-r from-black to-transparent z-20"></div>
-          <div className="absolute right-0 top-0 bottom-0 h-full w-24 bg-gradient-to-l from-black to-transparent z-20"></div>
+          <div className="absolute right-0 top-0 bottom-0 h-full w-24 bg-gradient-to-l from-black to-transparent z-20 "></div>
           
           {/* First row - videos moving left */}
           <div className="w-full h-[302px] overflow-hidden">
             <Marquee
               gradient={false}
               speed={45}
-              direction="left"
+              direction="right"
               pauseOnHover={false}
               play={true}
             >
@@ -124,11 +124,11 @@ const Hero = () => {
           </div>
           
           {/* Second row - videos moving right (no margin/gap between rows) */}
-          <div className="w-full h-[302px] overflow-hidden">
+          <div className="w-full h-[302px] overflow-hidden relative top-2">
             <Marquee
               gradient={false} 
               speed={35}
-              direction="right"
+              direction="left"
               pauseOnHover={false}
               play={true}
             >
@@ -189,18 +189,18 @@ const Hero = () => {
         value={email}
         onChange={e => setEmail(e.target.value)}
         placeholder="Enter your E-mail"
-        className="w-full py-3 px-4 bg-black border border-white/30 rounded-md focus:outline-none focus:border-[#29F2C0] text-white"
+        className="w-full py-2 px-4 bg-black border border-white/30 rounded-md focus:outline-none focus:border-[#29F2C0] text-white placeholder:text-white/30 input-custom  "
         style={{fontFamily:"Inter"}}
       />
       <button
-        className="bg-[#29F2C0] text-black py-2 px-8 rounded-md hover:opacity-90 transition-all  whitespace-nowrap"
+        className="bg-[#29F2C0] text-black py-1 h-10 px-8 rounded-md hover:opacity-90 transition-all  whitespace-nowrap"
         onClick={() => setShowModal(true)}
         style={{fontFamily:"Inter"}}
       >
         Join
       </button>
     </div>
-    <p className="text-center text-white/50" style={{fontFamily:"inter"}}>
+    <p className="text-center text-white/50 input-custom" style={{fontFamily:"inter"}}>
       Enter your email. No spam, we promise.
     </p>
     <JoinModal open={showModal} onClose={() => setShowModal(false)} />

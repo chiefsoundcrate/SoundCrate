@@ -124,3 +124,7 @@ const globalCSS = `
   font-size: 11px;
   white-space: nowrap;
 }
+.input-custom::placeholder {
+  font-family: 'Inter', sans-serif;
+  font-weight: 300; /* optional */
+}

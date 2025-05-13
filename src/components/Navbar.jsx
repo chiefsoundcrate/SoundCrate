@@ -19,11 +19,11 @@ const Navbar = () => {
           <ProfileMenu />
         ) : (
           <button
-            className="bg-[#29F2C0] text-black px-6 py-2 rounded font-bold hover:opacity-90 transition shadow-md focus:outline-none focus:ring-2 focus:ring-[#29F2C0] focus:ring-offset-2"
-            style={{ minWidth: 100 }}
+            className="bg-[#29F2C0] text-black px-6 py-2 rounded  hover:opacity-90 transition shadow-md focus:outline-none focus:ring-2 focus:ring-[#29F2C0] focus:ring-offset-2"
+            style={{ minWidth: 100,fontFamily:"Inter" }}
             onClick={() => setShowModal(true)}
           >
-            Join
+            Join 
           </button>
         )}
       </div>

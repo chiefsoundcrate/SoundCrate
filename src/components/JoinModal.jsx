@@ -123,7 +123,7 @@ const JoinModal = ({ open, onClose }) => {
                 <i className="fas fa-user"></i>
                 <input 
                   type="text" 
-                  placeholder="Display Name"
+                  placeholder="Artist Name"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   required
@@ -255,8 +255,8 @@ const JoinModal = ({ open, onClose }) => {
         .container-modal {
           position: relative;
           width: 100%;
-          max-width: 1000px;
-          min-height: 550px;
+          max-width: 800px; /* Reduced from 1000px */
+          min-height: 490px; /* Reduced from 550px */
           background-color: #181A1B;
           border-radius: 10px;
           overflow: hidden;
@@ -340,6 +340,7 @@ const JoinModal = ({ open, onClose }) => {
           transition: 0.2s 0.7s ease-in-out;
           opacity: 0;
           z-index: 1;
+          text-align: center; /* Center align the form content */
         }
 
         .form.active {
@@ -348,18 +349,18 @@ const JoinModal = ({ open, onClose }) => {
         }
 
         .title {
-          font-size: 2.2rem;
+          font-size: 1.8rem; /* Reduced from 2.2rem */
           color: #fff;
           margin-bottom: 10px;
         }
 
         .input-field {
-          max-width: 380px;
+          max-width: 390px;
           width: 100%;
-          height: 55px;
+          height: 45px; /* Slightly reduced height */
           background-color: #232526;
           margin: 10px 0;
-          border-radius: 55px;
+          border-radius: 10px; /* Less rounded than before (was 55px) */
           display: grid;
           grid-template-columns: 15% 85%;
           padding: 0 0.4rem;
@@ -374,9 +375,9 @@ const JoinModal = ({ open, onClose }) => {
 
         .input-field i {
           text-align: center;
-          line-height: 55px;
+          line-height: 40px;
           color: #acacac;
-          font-size: 1.1rem;
+          font-size: 0.8rem;
         }
 
         .input-field input {
@@ -384,15 +385,15 @@ const JoinModal = ({ open, onClose }) => {
           outline: none;
           border: none;
           line-height: 1;
-          font-weight: 600;
-          font-size: 1.1rem;
+          font-weight: 400;
+          font-size: 0.88rem;
           color: #fff;
-          padding-left: 10px;
+          padding-left: 5px;
         }
 
         .input-field input::placeholder {
           color: #aaa;
-          font-weight: 500;
+          font-weight: 400;
         }
 
         .error-message {
@@ -402,14 +403,14 @@ const JoinModal = ({ open, onClose }) => {
         }
 
         .btn {
-          width: 150px;
-          height: 49px;
+          width: 120px;
+          height: 42px; /* Slightly reduced height */
           border: none;
           outline: none;
-          border-radius: 49px;
+          border-radius: 15px; /* Less rounded to match input fields */
           cursor: pointer;
           background-color: #29F2C0;
-          color: #000;
+          color: #000; /* Black text */
           text-transform: uppercase;
           font-weight: 600;
           margin: 10px 0;
@@ -432,6 +433,15 @@ const JoinModal = ({ open, onClose }) => {
         .btn:hover:before {
           left: 100%;
         }
+        input {
+  background-color: transparent;
+  color: white;
+}
+
+input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px  inset !important; /* your background color */
+  -webkit-text-fill-color: white !important;
+}
 
         .btn:hover {
           transform: translateY(-3px);
@@ -450,7 +460,7 @@ const JoinModal = ({ open, onClose }) => {
         }
 
         .social-text {
-          padding: 0.7rem 0;
+          padding: 0.8rem 0;
           font-size: 1rem;
           color: #fff;
         }
@@ -461,7 +471,7 @@ const JoinModal = ({ open, onClose }) => {
         }
 
         .google-btn {
-          height: 46px;
+          height: 40px; /* Slightly reduced height */
           padding: 0 20px;
           border: 1px solid #333;
           margin: 0 0.45rem;
@@ -470,8 +480,8 @@ const JoinModal = ({ open, onClose }) => {
           align-items: center;
           text-decoration: none;
           color: #fff;
-          font-size: 1rem;
-          border-radius: 23px;
+          font-size: 0.9rem; /* Smaller font */
+          border-radius: 15px; /* Less rounded to match other elements */
           transition: 0.3s;
           background: none;
           cursor: pointer;
@@ -503,8 +513,8 @@ const JoinModal = ({ open, onClose }) => {
         .panel {
           display: flex;
           flex-direction: column;
-          align-items: flex-end;
-          justify-content: space-around;
+          align-items: center; /* Center align the panel content */
+          justify-content: center; /* Center align vertically */
           text-align: center;
           z-index: 7;
         }
@@ -520,38 +530,38 @@ const JoinModal = ({ open, onClose }) => {
         }
 
         .panel .content {
-          color: #fff;
+          color: #000; /* Changed to black from white */
           transition: 0.9s 0.6s ease-in-out;
-          width: 60%;
+          width: 70%; /* Slightly wider to match dark side */
           display: flex;
           flex-direction: column;
           align-items: center;
         }
 
         .panel h3 {
-          font-weight: 600;
+          font-weight: 500;
           line-height: 1;
-          font-size: 1.5rem;
+          font-size: 1.4rem; /* Slightly smaller */
         }
 
         .panel p {
-          font-size: 0.95rem;
-          padding: 0.7rem 0;
+          font-size: 0.85rem; /* Slightly smaller */
+          padding: 0.65rem 0;
         }
 
         .btn.transparent {
           margin: 0;
           background: none;
-          border: 2px solid #fff;
-          width: 130px;
-          height: 41px;
+          border: 2px solid #000; /* Changed to black from white */
+          width: 140px;
+          height: 40px; /* Slightly reduced height */
           font-weight: 600;
           font-size: 0.8rem;
-          color: #fff;
+          color: #000; /* Changed to black from white */
         }
 
         .btn.transparent:hover {
-          background: rgba(255, 255, 255, 0.1);
+          background: rgba(0, 0, 0, 0.1); /* Changed to black from white */
         }
 
         .image-container {
@@ -684,227 +694,12 @@ const JoinModal = ({ open, onClose }) => {
 
         .container-modal.sign-in-mode .signin-signup {
           left: 75%;
-        }d i {
-          text-align: center;
-          line-height: 55px;
-          color: #acacac;
-          font-size: 1.1rem;
-        }
-
-        .input-field input {
-          background: none;
-          outline: none;
-          border: none;
-          line-height: 1;
-          font-weight: 600;
-          font-size: 1.1rem;
-          color: #fff;
-          padding-left: 10px;
-        }
-
-        .input-field input::placeholder {
-          color: #aaa;
-          font-weight: 500;
-        }
-
-        .error-message {
-          color: #ff6b6b;
-          margin: 10px 0;
-          font-size: 0.9rem;
-        }
-
-        .btn {
-          width: 150px;
-          height: 49px;
-          border: none;
-          outline: none;
-          border-radius: 49px;
-          cursor: pointer;
-          background-color: #29F2C0;
-          color: #181A1B;
-          text-transform: uppercase;
-          font-weight: 600;
-          margin: 10px 0;
-          transition: 0.3s;
-        }
-
-        .btn:hover {
-          background-color: #1fcca0;
-        }
-
-        .btn:disabled {
-          background-color: #666;
-          cursor: not-allowed;
-        }
-
-        .social-text {
-          padding: 0.7rem 0;
-          font-size: 1rem;
-          color: #fff;
-        }
-
-        .social-media {
-          display: flex;
-          justify-content: center;
-        }
-
-        .social-icon {
-          height: 46px;
-          width: 46px;
-          border: 1px solid #333;
-          margin: 0 0.45rem;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          text-decoration: none;
-          color: #fff;
-          font-size: 1.1rem;
-          border-radius: 50%;
-          transition: 0.3s;
-          background: none;
-          cursor: pointer;
-        }
-
-        .social-icon:hover {
-          color: #29F2C0;
-          border-color: #29F2C0;
-        }
-
-        .panels-container {
-          position: absolute;
-          width: 100%;
-          height: 100%;
-          top: 0;
-          left: 0;
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-        }
-
-        .panel {
-          display: flex;
-          flex-direction: column;
-          align-items: flex-end;
-          justify-content: space-around;
-          text-align: center;
-          z-index: 7;
-        }
-
-        .left-panel {
-          pointer-events: all;
-          padding: 3rem 17% 2rem 12%;
-        }
-
-        .right-panel {
-          pointer-events: none;
-          padding: 3rem 12% 2rem 17%;
-        }
-
-        .panel .content {
-          color: #fff;
-          transition: 0.9s 0.6s ease-in-out;
-          width: 60%;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-        }
-
-        .panel h3 {
-          font-weight: 600;
-          line-height: 1;
-          font-size: 1.5rem;
-        }
-
-        .panel p {
-          font-size: 0.95rem;
-          padding: 0.7rem 0;
-        }
-
-        .btn.transparent {
-          margin: 0;
-          background: none;
-          border: 2px solid #fff;
-          width: 130px;
-          height: 41px;
-          font-weight: 600;
-          font-size: 0.8rem;
-          color: #fff;
-        }
-
-        .image-container {
-          width: 40%;
-          transition: 0.9s 0.6s ease-in-out;
-        }
-
-        .image {
-          width: 100%;
-          height: auto;
-          transition: 0.9s 0.6s ease-in-out;
-        }
-
-        .right-panel .content,
-        .right-panel .image-container {
-          transform: translateX(800px);
-        }
-
-        /* ANIMATION */
-        .container-modal.sign-up-mode:before {
-          transform: translate(100%, -50%);
-          right: 52%;
-        }
-
-        .container-modal.sign-up-mode .left-panel .image-container,
-        .container-modal.sign-up-mode .left-panel .content {
-          transform: translateX(-800px);
-        }
-
-        .container-modal.sign-up-mode .right-panel .content,
-        .container-modal.sign-up-mode .right-panel .image-container {
-          transform: translateX(0);
-        }
-
-        .container-modal.sign-up-mode .left-panel {
-          pointer-events: none;
-        }
-
-        .container-modal.sign-up-mode .right-panel {
-          pointer-events: all;
-        }
-
-        .container-modal.sign-up-mode .signin-signup {
-          left: 25%;
-        }
-
-        .container-modal.sign-in-mode:before {
-          transform: translateY(-50%);
-          right: 48%;
-        }
-
-        .container-modal.sign-in-mode .left-panel .image-container,
-        .container-modal.sign-in-mode .left-panel .content {
-          transform: translateX(0);
-        }
-
-        .container-modal.sign-in-mode .right-panel .content,
-        .container-modal.sign-in-mode .right-panel .image-container {
-          transform: translateX(800px);
-        }
-
-        .container-modal.sign-in-mode .left-panel {
-          pointer-events: all;
-        }
-
-        .container-modal.sign-in-mode .right-panel {
-          pointer-events: none;
-        }
-
-        .container-modal.sign-in-mode .signin-signup {
-          left: 75%;
         }
 
         /* MEDIA QUERIES */
         @media (max-width: 870px) {
           .container-modal {
-            min-height: 800px;
+            min-height: 550px; /* Reduced from 800px */
             height: 100vh;
           }
 

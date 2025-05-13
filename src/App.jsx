@@ -28,12 +28,14 @@ function Layout() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0B0D0D] text-white flex flex-col">
+    <div className="min-h-screen bg-[#0B0D0D] text-white flex flex-col"id="hero">
       <Navbar />
       <Hero />
       <Carousel />
-      <Footer />
-      <Outlet />
+      <section className="relative top-52">
+        <Footer/>
+      </section>
+      
     </div>
   );
 }

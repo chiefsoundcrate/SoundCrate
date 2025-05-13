@@ -42,7 +42,7 @@ const ProfileMenu = () => {
           alt="avatar"
           className="w-8 h-8 rounded-full border border-gray-300"
         />
-        <span className="hidden md:inline text-sm font-medium">
+        <span className="hidden md:inline text-sm font-medium" style={{fontFamily:"Inter"}}>
           {displayName}
         </span>
       </button>

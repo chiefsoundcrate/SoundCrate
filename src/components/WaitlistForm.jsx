@@ -90,9 +90,9 @@ const WaitlistForm = () => {
   if (currentUser && waitlistStatus) {
     return (
       <div className="text-center">
-        <div className="bg-teal-400/20 text-teal-300 p-4 rounded-md mb-4">
-          <p className="font-medium">You're already on our waitlist!</p>
-          <p className="text-sm mt-1">We'll notify you when SoundCrate launches.</p>
+        <div className="bg-teal-400/20 text-teal-300 p-4 rounded-md mb-4" style={{fontFamily:"Inter"}}>
+          <p className="">You're already on our waitlist!</p>
+          <p className=" mt-1" style={{fontFamily:"Inter"}}>We'll notify you when SoundCrate launches.</p>
         </div>
       </div>
     );
