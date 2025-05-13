@@ -149,12 +149,37 @@ const Hero = () => {
       
       {/* Main content */}
       <div className="w-full max-w-4xl mx-auto px-4 text-center z-20">
-        <h2 className="text-[20px] md:text-3xl font-bold mb-6 text-white">
-          Find your next favorite artist in<br/>30 seconds.
-        </h2>
-        <p className="max-w-2xl mx-auto mb-10 text-white/80">
-          Get early access to the future of music ownership and streaming.
-        </p>
+      <div>
+  <h1 className="text-[20px] md:text-4xl mb-6 text-white" style={{fontFamily:"Inter"}}>
+    Find Your Next Favorite Artists In<br/>30 Seconds.
+  </h1>
+  
+  <div className="mb-6">
+    <p 
+      className="inline-block text-base md:text-lg font-semibold animate-shimmer bg-gradient-to-r from-[#29F2C0] via-[#1BC79F] to-[#29F2C0] bg-[length:200%_100%] bg-clip-text text-transparent"
+      style={{fontFamily:"Inter"}}
+    >
+      Join the SoundCrate Waitlist
+    </p>
+  </div>
+  
+  <p className="max-w-3xl mx-auto mb-10 text-white/80" style={{fontFamily:"Inter"}}>
+    SoundCrate is <span className="text-[#29F2C0]">changing the culture</span> of community building and shaping a new direction for music discoverability. 
+    Be part of the <span className="text-[#29F2C0]">movement</span> redefining how artists and listeners connect. 
+    We're building something bold—get early access by joining the waitlist today
+  </p>
+</div>
+
+<style jsx>{`
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  
+  .animate-shimmer {
+    animation: shimmer 2s ease-in-out infinite;
+  }
+`}</style>
         {!user ? (
           <div className="flex flex-col items-center gap-4">
             <input
@@ -174,10 +199,10 @@ const Hero = () => {
           </div>
         ) : (
           <div className="flex flex-col items-center gap-4">
-            <div className="text-lg text-white">Welcome, {user.email}</div>
+            <div className="text-lg text-white" style={{fontFamily:"Inter"}}>Welcome, {user.displayName}</div>
             
             {isOnWaitlist ? (
-              <div className="text-[#29F2C0] font-medium bg-[#29F2C0]/10 py-3 px-6 rounded-md border border-[#29F2C0]/30">
+              <div className="text-[#29F2C0] font-medium bg-[#29F2C0]/10 py-3 px-6 rounded-md border border-[#29F2C0]/30" style={{fontFamily:"Inter"}}>
                 You're on the waitlist! We'll notify you when access is available.
               </div>
             ) : (
