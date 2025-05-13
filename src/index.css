@@ -81,3 +81,46 @@ const globalCSS = `
     scrollbar-width: none;  /* Firefox */
   }
 `
+/* WaveSurfer custom region styles */
+.wavesurfer-region {
+  background: rgba(255, 0, 0, 0.3) !important;
+  border-left: 3px solid #ff0000 !important;
+  border-right: 3px solid #ff0000 !important;
+  cursor: move !important;
+}
+
+.wavesurfer-handle {
+  background-color: #ff0000 !important;
+  width: 12px !important;
+  opacity: 1 !important;
+  cursor: col-resize !important;
+  border-radius: 4px !important;
+}
+
+.wavesurfer-handle-start {
+  left: -6px !important;
+}
+
+.wavesurfer-handle-end {
+  right: -6px !important;
+}
+
+.wavesurfer-handle:hover {
+  background-color: #cc0000 !important;
+  transform: scaleX(1.2);
+}
+
+/* Add timestamp display on handles */
+.wavesurfer-handle::after {
+  content: attr(data-time);
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ff0000;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+}

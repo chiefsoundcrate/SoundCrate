@@ -148,51 +148,85 @@ const Hero = () => {
       <div className="absolute inset-0 bg-[#0B0D0D]/80 z-10"></div>
       
       {/* Main content */}
-      <div className="w-full max-w-4xl mx-auto px-4 text-center z-20">
-        <h2 className="text-[20px] md:text-3xl font-bold mb-6 text-white">
-          Find your next favorite artist in<br/>30 seconds.
-        </h2>
-        <p className="max-w-2xl mx-auto mb-10 text-white/80">
-          Get early access to the future of music ownership and streaming.
-        </p>
+      <div className="w-full max-w-6xl text-center z-20">
+      <div className='w-full max-w-5xl relative left-14'>
+  <h1 className="text-[20px] md:text-4xl mb-6 text-white" style={{fontFamily:"Inter"}}>
+    Find Your Next Favorite Artists In<br/>30 Seconds.
+  </h1>
+  
+  <div className="mb-6">
+    <p 
+      className="inline-block text-base md:text-lg font-semibold animate-shimmer bg-gradient-to-r from-[#29F2C0] via-[#1BC79F] to-[#29F2C0] bg-[length:200%_100%] bg-clip-text text-transparent"
+      style={{fontFamily:"Inter"}}
+    >
+      Join the SoundCrate Waitlist
+    </p>
+  </div>
+  
+  <p className="max-w-6xl mx-auto mb-10 text-white/80" style={{ fontFamily: "Inter" }}>
+  SoundCrate is <span className="">changing the culture</span> of community building and shaping a new direction for music discoverability. 
+  Be part of the <span>movement</span> redefining how artists and listeners connect. 
+  We're building something bold—get early access by joining the waitlist today.
+</p>
+
+</div>
+
+<style jsx>{`
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  
+  .animate-shimmer {
+    animation: shimmer 2s ease-in-out infinite;
+  }
+`}</style>
         {!user ? (
-          <div className="flex flex-col items-center gap-4">
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="Enter your E-mail"
-              className="w-full max-w-xs py-3 px-4 bg-black border border-white/30 rounded-md focus:outline-none focus:border-[#29F2C0] text-white"
-            />
-            <button
-              className="bg-[#29F2C0] text-black py-2 px-8 rounded-md hover:opacity-90 transition-all font-bold"
-              onClick={() => setShowModal(true)}
-            >
-              Join
-            </button>
-            <JoinModal open={showModal} onClose={() => setShowModal(false)} />
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-4">
-            <div className="text-lg text-white">Welcome, {user.email}</div>
-            
-            {isOnWaitlist ? (
-              <div className="text-[#29F2C0] font-medium bg-[#29F2C0]/10 py-3 px-6 rounded-md border border-[#29F2C0]/30">
-                You're on the waitlist! We'll notify you when access is available.
-              </div>
-            ) : (
-              <button
-                className="bg-[#29F2C0] text-black py-2 px-8 rounded-md hover:opacity-90 transition-all font-bold"
-                onClick={handleWaitlist}
-                disabled={waitlistLoading}
-              >
-                {waitlistLoading ? "Adding..." : "Join Waitlist"}
-              </button>
-            )}
-            
-            {waitlistMsg && !isOnWaitlist && <div className="text-green-400 mt-2">{waitlistMsg}</div>}
-          </div>
-        )}
+  <div className="flex flex-col items-center gap-4">
+    <div className="flex w-full max-w-md gap-2">
+      <input
+        type="email"
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+        placeholder="Enter your E-mail"
+        className="w-full py-3 px-4 bg-black border border-white/30 rounded-md focus:outline-none focus:border-[#29F2C0] text-white"
+        style={{fontFamily:"Inter"}}
+      />
+      <button
+        className="bg-[#29F2C0] text-black py-2 px-8 rounded-md hover:opacity-90 transition-all  whitespace-nowrap"
+        onClick={() => setShowModal(true)}
+        style={{fontFamily:"Inter"}}
+      >
+        Join
+      </button>
+    </div>
+    <p className="text-center text-white/50" style={{fontFamily:"inter"}}>
+      Enter your email. No spam, we promise.
+    </p>
+    <JoinModal open={showModal} onClose={() => setShowModal(false)} />
+  </div>
+) : (
+  <div className="flex flex-col items-center gap-4">
+    <div className="text-lg text-white" style={{fontFamily:"Inter"}}>Welcome, {user.displayName}</div>
+    
+    {isOnWaitlist ? (
+      <div className="text-[#29F2C0] font-medium bg-[#29F2C0]/10 py-3 px-6 rounded-md border border-[#29F2C0]/30" style={{fontFamily:"Inter"}}>
+        You're on the waitlist! We'll notify you when access is available.
+      </div>
+    ) : (
+      <button
+        className="bg-[#29F2C0] text-black py-2 px-8 rounded-md hover:opacity-90 transition-all font-bold"
+        onClick={handleWaitlist}
+        disabled={waitlistLoading}
+        style={{fontFamily:"Inter"}}
+      >
+        {waitlistLoading ? "Adding..." : "Join Waitlist"}
+      </button>
+    )}
+    
+    {waitlistMsg && !isOnWaitlist && <div className="text-green-400 mt-2" style={{fontFamily:"Inter"}}>{waitlistMsg}</div>}
+  </div>
+)}
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import { db } from "../services/firebase";
 import { collection, doc, updateDoc, increment, query, orderBy, getDoc, setDoc, serverTimestamp, where, limit } from "firebase/firestore";
 import UploadModal from "./UploadModal";
 import { useAuth } from "../hooks/useAuth";
-import { Heart, Play, Pause, ChevronLeft, ChevronRight, Upload, MoreHorizontal } from "lucide-react";
+import { Heart, Play, Pause, ChevronLeft, ChevronRight, Upload, Share } from "lucide-react";
 
 const Carousel = () => {
   const [showModal, setShowModal] = useState(false);
@@ -225,6 +225,28 @@ const Carousel = () => {
     }
   };
   
+  // Handle share functionality
+  const handleShare = (song, e) => {
+    e.stopPropagation();
+    
+    if (navigator.share) {
+      navigator.share({
+        title: `${song.title} by ${song.artist}`,
+        text: `Check out "${song.title}" by ${song.artist}!`,
+        url: window.location.href,
+      })
+      .catch((error) => console.log('Error sharing', error));
+    } else {
+      // Fallback for browsers without native share API
+      const shareText = `Check out "${song.title}" by ${song.artist}!`;
+      const shareUrl = window.location.href;
+      
+      navigator.clipboard.writeText(`${shareText} ${shareUrl}`)
+        .then(() => alert("Link copied to clipboard!"))
+        .catch(() => alert("Failed to copy link"));
+    }
+  };
+  
   // Play 30s preview
   const handlePlay = (song) => {
     // If already playing something, stop it
@@ -319,22 +341,66 @@ const Carousel = () => {
     return (
       <div
         key={song.id}
-        className="card w-full bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300"
+        className="relative w-full rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300"
         onMouseEnter={() => setHovered(song.id)}
         onMouseLeave={() => setHovered(null)}
+        style={{ fontFamily: "Inter" }}
       >
-        <div className="relative aspect-square overflow-hidden rounded-t-lg">
+        <div className="relative aspect-square overflow-hidden">
           <img 
             src={song.coverUrl} 
             alt={`${song.title} by ${song.artist}`}
             className="w-full h-full object-cover"
           />
           
+          {/* Share button - top left */}
+          <button
+            onClick={(e) => handleShare(song, e)}
+            className="absolute top-2 left-2 p-2 bg-white/80 rounded-full hover:bg-white transition-all z-10"
+            style={{ fontFamily: "Inter" }}
+          >
+            <Share size={16} className="text-black" />
+          </button>
+          
+          {/* Vote button - top right */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!votedRecently[song.id] && !isVoting[song.id]) {
+                handleVote(song.id);
+              }
+            }}
+            disabled={!user || votedRecently[song.id] || isVoting[song.id]}
+            className={`absolute top-2 right-2 p-2 bg-white/80 rounded-full hover:bg-white transition-all z-10 ${
+              votedRecently[song.id] || isVoting[song.id]
+                ? 'opacity-70 cursor-not-allowed' 
+                : ''
+            }`}
+            title={
+              !user 
+                ? "Sign in to vote" 
+                : votedRecently[song.id] 
+                  ? "You can vote again in 24 hours" 
+                  : "Vote for this track"
+            }
+            style={{ fontFamily: "Inter" }}
+          >
+            <Heart 
+              size={16} 
+              className={`${
+                votedRecently[song.id] 
+                  ? "fill-red-500 text-red-500" 
+                  : "text-black hover:text-red-500"
+              }`}
+            />
+          </button>
+          
+          {/* Play button overlay */}
           <button
             onClick={() => handlePlay(song)}
             className={`absolute inset-0 flex items-center justify-center bg-black/60 transition-opacity ${
               hovered === song.id || playing === song.id ? 'opacity-100' : 'opacity-0'
-            } group-hover:opacity-100`}
+            }`}
           >
             {loadingStates[song.id] ? (
               <div className="w-12 h-12 rounded-full border-2 border-white/30 border-t-[#29F2C0] animate-spin"></div>
@@ -346,37 +412,16 @@ const Carousel = () => {
           </button>
         </div>
         
-        <div className="card-body p-4">
-          <h3 className="card-title text-base truncate">{song.title}</h3>
-          <p className="text-sm text-gray-400 truncate">{song.artist}</p>
-          
-          <div className="flex items-center justify-between mt-2">
-            <button
-              onClick={() => !votedRecently[song.id] && handleVote(song.id)}
-              disabled={!user || votedRecently[song.id] || isVoting[song.id]}
-              className={`flex items-center gap-2 text-sm transition-all duration-300 ${
-                votedRecently[song.id] || isVoting[song.id]
-                  ? 'opacity-50 cursor-not-allowed' 
-                  : 'hover:scale-110'
-              }`}
-              title={
-                !user 
-                  ? "Sign in to vote" 
-                  : votedRecently[song.id] 
-                    ? "You can vote again in 24 hours" 
-                    : "Vote for this track"
-              }
-            >
-              <Heart 
-                size={16} 
-                className={`transition-transform ${
-                  votedRecently[song.id] 
-                    ? "fill-red-500" 
-                    : "text-gray-300 hover:text-red-500"
-                }`}
-              />
-              <span>{voteCount}</span>
-            </button>
+        {/* Song info bar - shorter and white with black text */}
+        <div className="bg-white p-3" style={{ fontFamily: "Inter" }}>
+          <div className="flex justify-between items-center">
+            <div className="overflow-hidden">
+              <h3 className="font-medium text-black text-sm truncate" style={{ fontFamily: "Inter" }}>{song.title}</h3>
+              <p className="text-gray-600 text-xs truncate" style={{ fontFamily: "Inter" }}>{song.artist}</p>
+            </div>
+            <div className="flex items-center text-xs font-medium">
+              <span className="text-black">{voteCount}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -384,16 +429,16 @@ const Carousel = () => {
   };
   
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 py-6">
+    <div className="w-full max-w-7xl mx-auto px-4 py-6" style={{ fontFamily: "Inter" }}>
       {/* Header section */}
-      <div className="flex flex-col justify-center items-center py-8 text-center px-4">
-        <h1 className="text-4xl font-bold mb-3">Vote For Your Favorite Song</h1>
-        <p className="text-gray-400 max-w-2xl">Get early access to the future of music ownership and streaming</p>
+      <div className="flex flex-col justify-center items-center py-8 text-center px-4" style={{ fontFamily: "Inter" }}>
+        <h1 className="text-4xl font-bold mb-3" style={{ fontFamily: "Inter" }}>Vote For Your Favorite Song</h1>
+        <p className="text-gray-400 max-w-2xl" style={{ fontFamily: "Inter" }}>Get early access to the future of music ownership and streaming</p>
         
         <button 
           onClick={() => setShowModal(true)}
           className="mt-6 gap-2 flex items-center justify-center text-white py-2 px-4 rounded-md transition-all duration-300 hover:shadow-lg hover:opacity-90"
-          style={{ backgroundColor: "rgb(39, 220, 175)" }}
+          style={{ backgroundColor: "rgb(39, 220, 175)", fontFamily: "Inter" }}
           aria-label="Upload Song"
         >
           <Upload size={18} />
@@ -401,22 +446,24 @@ const Carousel = () => {
         </button>
       </div>
       
-      {/* Top 50 liked songs carousel */}
-      <div className="py-8 relative">
+      {/* Featured songs carousel (renamed from Top 50) */}
+      <div className="py-8 relative" style={{ fontFamily: "Inter" }}>
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-2xl font-bold">50 Most Liked Songs</h2>
+          <h2 className="text-2xl font-bold" style={{ fontFamily: "Inter" }}>Featured Songs</h2>
           <div className="flex space-x-3">
             <button 
               onClick={() => scrollLeft("top-songs-carousel")}
-              className="btn btn-circle btn-sm"
+              className="p-2 rounded-full bg-gray-700 hover:bg-gray-200"
               aria-label="Scroll left"
+              style={{ fontFamily: "Inter" }}
             >
               <ChevronLeft size={20} />
             </button>
             <button 
               onClick={() => scrollRight("top-songs-carousel")}
-              className="btn btn-circle btn-sm"
+              className="p-2 rounded-full bg-gray-700 hover:bg-gray-200"
               aria-label="Scroll right"
+              style={{ fontFamily: "Inter" }}
             >
               <ChevronRight size={20} />
             </button>
@@ -428,20 +475,20 @@ const Carousel = () => {
             {Array(5).fill(0).map((_, index) => (
               <div 
                 key={`placeholder-${index}`}
-                className="carousel-item w-60 shrink-0 animate-pulse"
+                className="w-60 shrink-0 animate-pulse"
               >
-                <div className="bg-base-300 h-60 w-full rounded-lg"></div>
-                <div className="bg-base-300 h-4 w-3/4 mt-3 rounded"></div>
-                <div className="bg-base-300 h-3 w-1/2 mt-2 rounded"></div>
+                <div className="bg-gray-200 h-60 w-full rounded-lg"></div>
+                <div className="bg-gray-200 h-4 w-3/4 mt-3 rounded"></div>
+                <div className="bg-gray-200 h-3 w-1/2 mt-2 rounded"></div>
               </div>
             ))}
           </div>
         ) : topSongs.length === 0 ? (
-          <div className="text-center py-8">No top songs available yet</div>
+          <div className="text-center py-8" style={{ fontFamily: "Inter" }}>No featured songs available yet</div>
         ) : (
-          <div className="carousel carousel-center w-full p-2 space-x-5 rounded-box" id="top-songs-carousel">
+          <div className="flex overflow-x-auto space-x-5 pb-2 hide-scrollbar" id="top-songs-carousel">
             {topSongs.map(song => (
-              <div className="carousel-item w-60 shrink-0" key={song.id}>
+              <div className="w-60 shrink-0" key={song.id}>
                 {renderSongCard(song)}
               </div>
             ))}
@@ -450,8 +497,8 @@ const Carousel = () => {
       </div>
       
       {/* New releases grid */}
-      <div className="py-8">
-        <h2 className="text-2xl font-bold mb-5">New Releases</h2>
+      <div className="py-8" style={{ fontFamily: "Inter" }}>
+        <h2 className="text-2xl font-bold mb-5" style={{ fontFamily: "Inter" }}>New Releases</h2>
         
         {newReleasesLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
@@ -460,14 +507,14 @@ const Carousel = () => {
                 key={`placeholder-${index}`}
                 className="animate-pulse"
               >
-                <div className="bg-base-300 h-48 w-full rounded-lg"></div>
-                <div className="bg-base-300 h-4 w-3/4 mt-3 rounded"></div>
-                <div className="bg-base-300 h-3 w-1/2 mt-2 rounded"></div>
+                <div className="bg-gray-200 h-48 w-full rounded-lg"></div>
+                <div className="bg-gray-200 h-4 w-3/4 mt-3 rounded"></div>
+                <div className="bg-gray-200 h-3 w-1/2 mt-2 rounded"></div>
               </div>
             ))}
           </div>
         ) : newReleases.length === 0 ? (
-          <div className="text-center py-8">No new releases available</div>
+          <div className="text-center py-8" style={{ fontFamily: "Inter" }}>No new releases available</div>
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-5">
@@ -481,7 +528,8 @@ const Carousel = () => {
               <div className="text-center mt-8">
                 <button 
                   onClick={() => setShowMoreNewSongs(true)}
-                  className="btn btn-outline btn-wide"
+                  className="py-2 px-8 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                  style={{ fontFamily: "Inter" }}
                 >
                   Show More Songs
                 </button>
@@ -490,6 +538,17 @@ const Carousel = () => {
           </>
         )}
       </div>
+      
+      {/* Add this styling to hide scrollbars while maintaining functionality */}
+      <style jsx global>{`
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .hide-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
       
       {/* Upload Modal */}
       <UploadModal 
