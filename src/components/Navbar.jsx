@@ -10,7 +10,7 @@ const Navbar = () => {
   const [showModal, setShowModal] = useState(false);
 
   return (
-    <nav className="w-full h-16 flex items-center justify-between px-6 bg-[#151817]  sticky top-0 z-50" style={{ minHeight: 64 }}>
+    <nav className="w-full h-16 flex items-center justify-between px-20 bg-[#151817]  sticky top-0 z-50" style={{ minHeight: 64 }}>
       <Link to="/" className="text-2xl font-bold text-[#29F2C0]">
         SoundCrate
       </Link>
