@@ -148,8 +148,8 @@ const Hero = () => {
       <div className="absolute inset-0 bg-[#0B0D0D]/80 z-10"></div>
       
       {/* Main content */}
-      <div className="w-full max-w-4xl mx-auto px-4 text-center z-20">
-      <div>
+      <div className="w-full max-w-6xl text-center z-20">
+      <div className='w-full max-w-5xl relative left-14'>
   <h1 className="text-[20px] md:text-4xl mb-6 text-white" style={{fontFamily:"Inter"}}>
     Find Your Next Favorite Artists In<br/>30 Seconds.
   </h1>
@@ -163,11 +163,12 @@ const Hero = () => {
     </p>
   </div>
   
-  <p className="max-w-3xl mx-auto mb-10 text-white/80" style={{fontFamily:"Inter"}}>
-    SoundCrate is <span className="text-[#29F2C0]">changing the culture</span> of community building and shaping a new direction for music discoverability. 
-    Be part of the <span className="text-[#29F2C0]">movement</span> redefining how artists and listeners connect. 
-    We're building something bold—get early access by joining the waitlist today
-  </p>
+  <p className="max-w-6xl mx-auto mb-10 text-white/80" style={{ fontFamily: "Inter" }}>
+  SoundCrate is <span className="">changing the culture</span> of community building and shaping a new direction for music discoverability. 
+  Be part of the <span>movement</span> redefining how artists and listeners connect. 
+  We're building something bold—get early access by joining the waitlist today.
+</p>
+
 </div>
 
 <style jsx>{`
@@ -181,7 +182,7 @@ const Hero = () => {
   }
 `}</style>
         {!user ? (
-          <div className="flex flex-col items-center gap-4">
+          <div className="flex flex-col items-center gap-4 ">
             <input
               type="email"
               value={email}
