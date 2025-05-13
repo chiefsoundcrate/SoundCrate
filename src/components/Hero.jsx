@@ -182,43 +182,51 @@ const Hero = () => {
   }
 `}</style>
         {!user ? (
-          <div className="flex flex-col items-center gap-4 ">
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="Enter your E-mail"
-              className="w-full max-w-xs py-3 px-4 bg-black border border-white/30 rounded-md focus:outline-none focus:border-[#29F2C0] text-white"
-            />
-            <button
-              className="bg-[#29F2C0] text-black py-2 px-8 rounded-md hover:opacity-90 transition-all font-bold"
-              onClick={() => setShowModal(true)}
-            >
-              Join
-            </button>
-            <JoinModal open={showModal} onClose={() => setShowModal(false)} />
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-4">
-            <div className="text-lg text-white" style={{fontFamily:"Inter"}}>Welcome, {user.displayName}</div>
-            
-            {isOnWaitlist ? (
-              <div className="text-[#29F2C0] font-medium bg-[#29F2C0]/10 py-3 px-6 rounded-md border border-[#29F2C0]/30" style={{fontFamily:"Inter"}}>
-                You're on the waitlist! We'll notify you when access is available.
-              </div>
-            ) : (
-              <button
-                className="bg-[#29F2C0] text-black py-2 px-8 rounded-md hover:opacity-90 transition-all font-bold"
-                onClick={handleWaitlist}
-                disabled={waitlistLoading}
-              >
-                {waitlistLoading ? "Adding..." : "Join Waitlist"}
-              </button>
-            )}
-            
-            {waitlistMsg && !isOnWaitlist && <div className="text-green-400 mt-2">{waitlistMsg}</div>}
-          </div>
-        )}
+  <div className="flex flex-col items-center gap-4">
+    <div className="flex w-full max-w-md gap-2">
+      <input
+        type="email"
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+        placeholder="Enter your E-mail"
+        className="w-full py-3 px-4 bg-black border border-white/30 rounded-md focus:outline-none focus:border-[#29F2C0] text-white"
+        style={{fontFamily:"Inter"}}
+      />
+      <button
+        className="bg-[#29F2C0] text-black py-2 px-8 rounded-md hover:opacity-90 transition-all  whitespace-nowrap"
+        onClick={() => setShowModal(true)}
+        style={{fontFamily:"Inter"}}
+      >
+        Join
+      </button>
+    </div>
+    <p className="text-center text-white/50" style={{fontFamily:"inter"}}>
+      Enter your email. No spam, we promise.
+    </p>
+    <JoinModal open={showModal} onClose={() => setShowModal(false)} />
+  </div>
+) : (
+  <div className="flex flex-col items-center gap-4">
+    <div className="text-lg text-white" style={{fontFamily:"Inter"}}>Welcome, {user.displayName}</div>
+    
+    {isOnWaitlist ? (
+      <div className="text-[#29F2C0] font-medium bg-[#29F2C0]/10 py-3 px-6 rounded-md border border-[#29F2C0]/30" style={{fontFamily:"Inter"}}>
+        You're on the waitlist! We'll notify you when access is available.
+      </div>
+    ) : (
+      <button
+        className="bg-[#29F2C0] text-black py-2 px-8 rounded-md hover:opacity-90 transition-all font-bold"
+        onClick={handleWaitlist}
+        disabled={waitlistLoading}
+        style={{fontFamily:"Inter"}}
+      >
+        {waitlistLoading ? "Adding..." : "Join Waitlist"}
+      </button>
+    )}
+    
+    {waitlistMsg && !isOnWaitlist && <div className="text-green-400 mt-2" style={{fontFamily:"Inter"}}>{waitlistMsg}</div>}
+  </div>
+)}
       </div>
     </div>
   );
