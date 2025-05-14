@@ -7,9 +7,9 @@ import { addToWaitlist } from "../services/authService";
 import emailjs from "emailjs-com";
 import JoinModal from "./JoinModal";
 
-const SERVICE_ID = "service_0wx2eep";
-const TEMPLATE_ID = "template_9dey8e9";
-const USER_ID = "n8kbbJ3UfJSEn4FHD";
+const SERVICE_ID = "service_35ytvak";
+const TEMPLATE_ID = "template_1u61d9p";
+const USER_ID = "-m7pu3Vr_U-CtWZg5";
 
 const Hero = () => {
   const { user } = useAuth();
@@ -105,7 +105,7 @@ const Hero = () => {
           <div className="absolute right-0 top-0 bottom-0 h-full w-24 bg-gradient-to-l from-black to-transparent z-20 "></div>
           
           {/* First row - videos moving left */}
-          <div className="w-full h-[302px] overflow-hidden">
+          <div className="w-full h-[302px] overflow-hidden relative bottom-5">
             <Marquee
               gradient={false}
               speed={45}
@@ -124,7 +124,7 @@ const Hero = () => {
           </div>
           
           {/* Second row - videos moving right (no margin/gap between rows) */}
-          <div className="w-full h-[302px] overflow-hidden relative top-2">
+          <div className="w-full h-[302px] overflow-hidden relative top-5">
             <Marquee
               gradient={false} 
               speed={35}
@@ -150,20 +150,20 @@ const Hero = () => {
       {/* Main content */}
       <div className="w-full max-w-6xl text-center z-20">
       <div className='w-full max-w-5xl relative left-14'>
-  <h1 className="text-[20px] md:text-4xl mb-6 text-white" style={{fontFamily:"Inter"}}>
-    Find Your Next Favorite Artists In<br/>30 Seconds.
+  <h1 className="text-[20px] md:text-6xl font-bold mb-6 text-white" style={{fontFamily:"Inter"}}>
+    Find Your Next Favorite Artists <br/>In <span className='text-[#29F2C0]'>30 Seconds</span>.
   </h1>
   
   <div className="mb-6">
     <p 
-      className="inline-block text-base md:text-lg font-semibold animate-shimmer bg-gradient-to-r from-[#29F2C0] via-[#1BC79F] to-[#29F2C0] bg-[length:200%_100%] bg-clip-text text-transparent"
+      className="inline-block text-base md:text-lg font-semibold bg-[#29F2C0] bg-[length:200%_100%]  p-4 rounded-4xl text-black "
       style={{fontFamily:"Inter"}}
     >
       Join the SoundCrate Waitlist
     </p>
   </div>
   
-  <p className="max-w-6xl mx-auto mb-10 text-white/80" style={{ fontFamily: "Inter" }}>
+  <p className="max-w-4xl mx-auto mb-10 text-xl text-white/80" style={{ fontFamily: "Inter" }}>
   SoundCrate is <span className="">changing the culture</span> of community building and shaping a new direction for music discoverability. 
   Be part of the <span>movement</span> redefining how artists and listeners connect. 
   We're building something bold—get early access by joining the waitlist today.
@@ -197,7 +197,7 @@ const Hero = () => {
         onClick={() => setShowModal(true)}
         style={{fontFamily:"Inter"}}
       >
-        Join
+        + Join Waitlist
       </button>
     </div>
     <p className="text-center text-white/50 input-custom" style={{fontFamily:"inter"}}>

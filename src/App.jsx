@@ -31,8 +31,10 @@ function Layout() {
     <div className="min-h-screen bg-[#0B0D0D] text-white flex flex-col">
       <Navbar />
       <Hero />
-      <Carousel />
-      <Footer />
+      <Carousel  />
+      <section className="relative top-44">
+        <Footer />
+      </section>
       <Outlet />
     </div>
   );

@@ -341,14 +341,14 @@ const Carousel = () => {
     return (
       <div
       key={song.id}
-      className="relative w-full rounded-[20px] overflow-hidden border-1 border-gray-800 hover:border-[#4d6b64] transition-all duration-500 group hover:shadow-xl hover:shadow-[#0d5946]/10 transform hover:-translate-y-1"
+      className="relative w-full rounded-[20px] overflow-hidden  border-gray-800 hover:border-[#4d6b64] transition-all duration-500 group hover:shadow-xl hover:shadow-[#0d5946]/10 transform hover:-translate-y-1"
       onMouseEnter={() => setHovered(song.id)}
       onMouseLeave={() => setHovered(null)}
       style={{ fontFamily: "Inter" }}
   >
-      <div className="relative aspect-square overflow-hidden bg-gray-900">
+      <div className="relative aspect-square overflow-hidden bg-gray-900 ">
           {/* Image with parallax effect */}
-          <div className="relative h-full w-full transform group-hover:scale-100 transition-transform duration-500 ease-out">
+          <div className="relative h-full w-full transform group-hover:scale-110 transition-transform duration-500 ease-out">
               <img 
                   src={song.coverUrl} 
                   alt={`${song.title} by ${song.artist}`}
@@ -362,13 +362,18 @@ const Carousel = () => {
               onClick={(e) => handleShare(song, e)}
               className="absolute top-4 left-4 p-2.5 backdrop-blur-lg bg-black/40 rounded-xl hover:bg-[#29f2c0] transition-all z-10 hover:shadow-glow hover:shadow-[#29f2c0]/30 "
           >
-              <Share size={15} className="text-[#29f2c0] group-hover:text-black transition-colors" />
+              <Share size={15} className="text-white group-hover:text-black transition-colors" />
           </button>
   
           {/* Vote button - Animated heart */}
           <button
-              onClick={(e) => handleVote(e, song.id)}
-              disabled={!user || votedRecently[song.id] || isVoting[song.id]}
+             onClick={(e) => {
+              e.stopPropagation();
+              if (!votedRecently[song.id] && !isVoting[song.id]) {
+                handleVote(song.id);
+              }
+            }}
+            disabled={!user || votedRecently[song.id] || isVoting[song.id]}
               className={`absolute top-4 right-4 p-2.5 backdrop-blur-lg bg-black/40 rounded-xl transition-all z-10 ${
                   votedRecently[song.id] || isVoting[song.id]
                       ? 'opacity-70 cursor-not-allowed' 
@@ -412,10 +417,10 @@ const Carousel = () => {
       </div>
   
       {/* Info section - Premium dark theme */}
-      <div className="bg-gradient-to-r  via-gray-950 to-black p-4 border-t border-gray-800">
+      <div className="bg-gradient-to-r  via-gray-950 to-black p-4  border-gray-800">
           <div className="flex justify-between items-center space-x-4">
               <div className="overflow-hidden flex-1">
-                  <h3 className="font-extrabold text-[#29f2c0] text-sm truncate tracking-wide uppercase">
+                  <h3 className="font-extrabold  text-sm truncate tracking-wide uppercase">
                       {song.title}
                   </h3>
                   <p className="text-gray-300/80 text-xs font-medium truncate mt-1 tracking-wider">
@@ -423,11 +428,11 @@ const Carousel = () => {
                   </p>
               </div>
               <div className="flex items-center">
-                  <div className="flex items-center space-x-2 bg-black/30 px-3 py-1.5 rounded-full border border-gray-700/50">
+                  <div className="flex items-center space-x-2 bg-black/30 px-3 py-1.5 rounded-full  border-gray-700/50">
                       
                       <span className="text-xs font-bold tracking-wide">
-                          <span className="text-[#29f2c0]">{voteCount}</span>
-                          <span className="text-gray-400 ml-1.5">VOTES</span>
+                          <span className="">{voteCount}</span>
+                          
                       </span>
                   </div>
               </div>
@@ -444,12 +449,26 @@ const Carousel = () => {
     <div className="w-full max-w-7xl mx-auto px-4 py-6" style={{ fontFamily: "Inter" }}>
       {/* Header section */}
       <div className="flex flex-col justify-center items-center py-8 text-center px-4" style={{ fontFamily: "Inter" }}>
-        <h1 className="text-5xl  mb-3" style={{ fontFamily: "Inter" }}>Vote For Your Favorite Song</h1>
-        <p className="text-gray-400 max-w-2xl " style={{ fontFamily: "Inter" }}>Get early access to the future of music ownership and streaming</p>
+        <h1 className="text-5xl  mb-3" style={{ fontFamily: "Inter" }}>Instant Music Discovery <br/>At Lightning Speed</h1>
+        <p className="text-center text-white/50 input-custom mt-4" style={{fontFamily:"inter"}}>
+      Explore and vote for your favorite songs clips.Show your support for all the artists that deserves the recoginition
+    </p>
         
-        <button 
+        
+        
+        
+      </div>
+      
+      {/* Featured songs carousel (renamed from Top 50) */}
+      <div className="py-8 relative top-9" style={{ fontFamily: "Inter" }}>
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-2xl mb-1 font-bold" style={{ fontFamily: "Inter" }}>Featured Songs</h2>
+
+
+          <div className="flex justify-between gap-16 relative right-4 items-center">
+          <button 
           onClick={() => setShowModal(true)}
-          className="mt-6 gap-2 flex items-center justify-center text-black py-2 px-4 rounded-md transition-all duration-300 hover:shadow-lg hover:opacity-90"
+          className="mt- gap-2 flex items-center justify-center text-black py-2 px-4 rounded-md transition-all duration-300 hover:shadow-lg hover:opacity-90"
           style={{ backgroundColor: "rgb(39, 220, 175)", fontFamily: "Inter" }}
           aria-label="Upload Song"
         >
@@ -457,17 +476,14 @@ const Carousel = () => {
           <span>Upload </span>
 
         </button>
-        <p className="mt-3 text-gray-400" style={{fontFamily:"Inter"}}>Upload Song (30s max)</p>
-      </div>
-      
-      {/* Featured songs carousel (renamed from Top 50) */}
-      <div className="py-8 relative top-9" style={{ fontFamily: "Inter" }}>
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-2xl mb-3 font-bold" style={{ fontFamily: "Inter" }}>Featured Songs</h2>
+
+
+
+
           <div className="flex space-x-3">
             <button 
               onClick={() => scrollLeft("top-songs-carousel")}
-              className="p-2 rounded-full bg-gray-700 hover:bg-[#569988]"
+              className="p-2 rounded-full bg-gray-700 hover:bg-[#569988] w-[40px] h-[40px]"
               aria-label="Scroll left"
               style={{ fontFamily: "Inter" }}
             >
@@ -475,17 +491,19 @@ const Carousel = () => {
             </button>
             <button 
               onClick={() => scrollRight("top-songs-carousel")}
-              className="p-2 rounded-full bg-gray-700 hover:bg-[#569988]"
+              className="p-2 rounded-full bg-gray-700 hover:bg-[#569988] w-[40px] h-[40px]  "
               aria-label="Scroll right"
               style={{ fontFamily: "Inter" }}
             >
               <ChevronRight size={20} />
             </button>
           </div>
+          </div>
+          
         </div>
         
         {topSongsLoading ? (
-          <div className="flex gap-5 overflow-x-auto pb-6 mt-3.5 " id="top-songs-carousel ">
+          <div className="flex gap-5 overflow-x-auto  pb-6 mt-3.5 " id="top-songs-carousel  ">
             {Array(5).fill(0).map((_, index) => (
               <div 
                 key={`placeholder-${index}`}

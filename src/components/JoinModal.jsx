@@ -174,28 +174,24 @@ const JoinModal = ({ open, onClose }) => {
           <div className="panels-container">
             <div className="panel left-panel">
               <div className="content">
-                <h3>New here?</h3>
+                <h3>New Here?</h3>
                 <p>Create an account and start your journey with Soundcrate today!</p>
                 <button 
-                  className="btn transparent" 
+                  className="btn w-full transparent" 
                   onClick={() => setTab("signup")}
                 >
                   Sign Up
                 </button>
               </div>
               <div className="image-container">
-                <svg className="image" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="50" cy="50" r="25" fill="#29F2C0" />
-                  <path d="M35,45 L65,45 L65,70 L35,70 Z" fill="#181A1B" />
-                  <circle cx="50" cy="35" r="10" fill="#181A1B" />
-                </svg>
+                
               </div>
             </div>
 
-            <div className="panel right-panel">
+            <div className="panel right-panel realtive bottom-14">
               <div className="content">
-                <h3>One of us?</h3>
-                <p>Sign in to access your Soundcrate account and continue where you left off.</p>
+                <h3>Already Have an Account?</h3>
+                <p>Sign in to access your Soundcrate account</p>
                 <button 
                   className="btn transparent" 
                   onClick={() => setTab("login")}
@@ -204,11 +200,7 @@ const JoinModal = ({ open, onClose }) => {
                 </button>
               </div>
               <div className="image-container">
-                <svg className="image" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="25" y="25" width="50" height="50" rx="5" fill="#29F2C0" />
-                  <circle cx="50" cy="40" r="8" fill="#181A1B" />
-                  <path d="M35,50 L65,50 L65,65 L35,65 Z" fill="#181A1B" />
-                </svg>
+                
               </div>
             </div>
           </div>
@@ -414,7 +406,7 @@ const JoinModal = ({ open, onClose }) => {
         }
 
         .btn {
-          width: 120px;
+          width: 241px;
           height: 42px; /* Slightly reduced height */
           border: none;
           outline: none;
@@ -521,10 +513,12 @@ const JoinModal = ({ open, onClose }) => {
         .panel {
           display: flex;
           flex-direction: column;
-          align-items: center; /* Center align the panel content */
+          align-items: ; /* Center align the panel content */
           justify-content: center; /* Center align vertically */
           text-align: center;
           z-index: 7;
+          position:relative;
+          bottom:30px;
         }
 
         .left-panel {
